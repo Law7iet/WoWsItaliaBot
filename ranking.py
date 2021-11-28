@@ -120,6 +120,7 @@ class Ranking(commands.Cog):
         pos = 1
         league_index = 0
         channel = self.bot.get_channel(CLASSIFICA_CLAN_BATTLE)
+        # channel = self.bot.get_channel(ADMIN_BOT)
         await channel.send("**Risultati Clan Battle Season " + str(CB_CURRENT_SEASON) + "**")
         for league in x:
             division_index = 1
