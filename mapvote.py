@@ -47,8 +47,10 @@ class MapVote(commands.Cog):
     @commands.command()
     async def mapvote(self, ctx, input_A, input_B):
         # Controllo dei permessi
-        org_role = ctx.guild.get_role(ADMIN)
-        if org_role in ctx.author.roles:
+        admin_role = ctx.guild.get_role(ADMIN)
+        org_league_role = ctx.guild.get_role(ORG_LEAGUE)
+        org_cup_role = ctx.guild.get_role(ORG_CUP)
+        if (admin_role in ctx.author.roles) or (org_league_role in ctx.author.roles) or (org_cup_role in ctx.author.roles):
             # Controllo degli argomenti
             rappr_A = ctx.guild.get_member(int(input_A[3:-1]))
             rappr_B = ctx.guild.get_member(int(input_B[3:-1]))

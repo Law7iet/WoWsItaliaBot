@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from utils import ADMIN_BOT
+from utils import ADMIN
 import config
 
 if __name__ == "__main__":
@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     @bot.event
     async def on_ready():
-        channel = bot.get_channel(ADMIN_BOT)
+        channel = bot.get_channel(ADMIN)
         await channel.send('WoWsItalia bot is ready.')
 
     @bot.command()
