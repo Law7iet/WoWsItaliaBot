@@ -27,7 +27,9 @@ class Nickname(commands.Cog):
                     continue
                 if guild.get_role(CC) in member.roles:
                     continue
-                if guild.get_role(ORG) in member.roles:
+                if guild.get_role(ORG_CUP) in member.roles:
+                    continue
+                if guild.get_role(ORG_LEAGUE) in member.roles:
                     continue
                 # Select who has marinario
                 if guild.get_role(MARINAIO) in member.roles:
