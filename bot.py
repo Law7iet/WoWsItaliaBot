@@ -38,4 +38,4 @@ if __name__ == "__main__":
         await ctx.send(embed = embed)
 
     # Run bot
-    bot.run(config.TOKEN)
+    bot.run(config.data["TOKEN"])

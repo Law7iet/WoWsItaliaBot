@@ -17,9 +17,9 @@ WOWS_ITALIA_BOT = 780427147658919946
 # WoWs Clan Stats
 WOWS_CLAN_BATTLE = "https://clans.worldofwarships.eu/api/clanbase/"
 # WoWs API
-URL_PLAYER_ID = 'https://api.worldofwarships.eu/wows/account/list/?application_id=' + config.APPLICATION_ID + '&search='
-URL_PLAYER_CLAN_ID = 'https://api.worldofwarships.eu/wows/clans/accountinfo/?application_id=' + config.APPLICATION_ID + '&account_id='
-URL_CLAN_NAME = 'https://api.worldofwarships.eu/wows/clans/info/?application_id=' + config.APPLICATION_ID + '&clan_id='
+URL_PLAYER_ID = 'https://api.worldofwarships.eu/wows/account/list/?application_id=' + config.data["APPLICATION_ID"] + '&search='
+URL_PLAYER_CLAN_ID = 'https://api.worldofwarships.eu/wows/clans/accountinfo/?application_id=' + config.data["APPLICATION_ID"] + '&account_id='
+URL_CLAN_NAME = 'https://api.worldofwarships.eu/wows/clans/info/?application_id=' + config.data["APPLICATION_ID"] + '&clan_id='
 
 # Current Season
 CB_CURRENT_SEASON = 15
