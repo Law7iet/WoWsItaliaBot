@@ -116,37 +116,41 @@ class Ranking(commands.Cog):
 
     @commands.command()
     async def ranking(self, ctx):
-        admin_role = ctx.guild.get_role(ADMIN)
-        if admin_role in ctx.author.roles:
-            x = self.my_rank()
-            pos = 1
-            league_index = 0
-            channel = self.bot.get_channel(CLASSIFICA_CLAN_BATTLE)
-            # channel = self.bot.get_channel(ADMIN)
-            await channel.send("**Risultati Clan Battle Season " + str(CB_CURRENT_SEASON) + "**")
-            for league in x:
-                division_index = 1
-                for division in league:
-                    message = self.league_color[league_index] + " **Lega " + self.league_type[league_index] + " - Divisione " + str(division_index) + "**\n"
-                    message = message + "```\n### Clan    - WinRate - Btl - Score - Promo\n"
-                    for clan in division:
-                        body = ""
-                        body = fun.my_align(str(pos), 3, "right") + " "
-                        body = body + fun.my_align(clan.tag, 5, "left") + " " + clan.squadra + " - "
-                        body = body + fun.my_align(clan.winrate, 7, "right") + " - "
-                        body = body + fun.my_align(clan.battles, 3, "right") + " -   "
-                        body = body + fun.my_align(str(clan.punteggio), 2, "right") + "  - "
-                        body = body + clan.get_promozione_in_string()
-                        message = message + body + "\n"
-                        pos = pos + 1
-                    message = message + "\n```"
-                    if division:
-                        await channel.send(message)
-                        print(message + "\n")
-                    division_index = division_index + 1
-                league_index = league_index + 1
-        else:
-            await ctx.send("Permesso negato")
+        try:
+            admin_role = ctx.guild.get_role(ROLE_ADMIN)
+            if admin_role in ctx.author.roles:
+                x = self.my_rank()
+                pos = 1
+                league_index = 0
+                channel = self.bot.get_channel(CH_TXT_CB)
+                # channel = self.bot.get_channel(ADMIN)
+                await channel.send("**Risultati Clan Battle Season " + str(CB_CURRENT_SEASON) + "**")
+                for league in x:
+                    division_index = 1
+                    for division in league:
+                        message = self.league_color[league_index] + " **Lega " + self.league_type[league_index] + " - Divisione " + str(division_index) + "**\n"
+                        message = message + "```\n### Clan    - WinRate - Btl - Score - Promo\n"
+                        for clan in division:
+                            body = ""
+                            body = fun.my_align(str(pos), 3, "right") + " "
+                            body = body + fun.my_align(clan.tag, 5, "left") + " " + clan.squadra + " - "
+                            body = body + fun.my_align(clan.winrate, 7, "right") + " - "
+                            body = body + fun.my_align(clan.battles, 3, "right") + " -   "
+                            body = body + fun.my_align(str(clan.punteggio), 2, "right") + "  - "
+                            body = body + clan.get_promozione_in_string()
+                            message = message + body + "\n"
+                            pos = pos + 1
+                        message = message + "\n```"
+                        if division:
+                            await channel.send(message)
+                            print(message + "\n")
+                        division_index = division_index + 1
+                    league_index = league_index + 1
+            else:
+                await ctx.send("Permesso negato")
+        except Exception as error:
+            print(error)
+            return
 
 def setup(bot):
     bot.add_cog(Ranking(bot))

@@ -30,15 +30,23 @@ class Podio(commands.Cog):
 
     @commands.command()
     async def league(self, ctx, edizione, posizione, team, immagine, *partecipanti):
-        embed = self.podio("League", edizione, posizione, team, immagine, *partecipanti)
-        channel = self.bot.get_channel(PODIO_LEAGUE)
-        await channel.send(embed = embed)
+        try:
+            embed = self.podio("League", edizione, posizione, team, immagine, *partecipanti)
+            channel = self.bot.get_channel(CH_TXT_PODIO_LEAGUE)
+            await channel.send(embed = embed)
+        except Exception as error:
+            print(error)
+            return
 
     @commands.command()
     async def cup(self, ctx, edizione, posizione, team, immagine, *partecipanti):
-        embed = self.podio("Cup", edizione, posizione, team, immagine, *partecipanti)
-        channel = self.bot.get_channel(PODIO_CUP)
-        await channel.send(embed = embed)
-
+        try:
+            embed = self.podio("Cup", edizione, posizione, team, immagine, *partecipanti)
+            channel = self.bot.get_channel(CH_TXT_PODIO_CUP)
+            await channel.send(embed = embed)
+        except Exception as error:
+            print(error)
+            return
+            
 def setup(bot):
     bot.add_cog(Podio(bot))
