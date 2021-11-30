@@ -51,7 +51,8 @@ class MapVote(commands.Cog):
             admin_role = ctx.guild.get_role(ROLE_ADMIN)
             org_league_role = ctx.guild.get_role(ROLE_ORG_LEAGUE)
             org_cup_role = ctx.guild.get_role(ROLE_ORG_CUP)
-            if (admin_role in ctx.author.roles) or (org_league_role in ctx.author.roles) or (org_cup_role in ctx.author.roles):
+            rappr_role = ctx.guild.get_role(ROLE_RAPPRESENTANTE_CLAN)
+            if  (admin_role in ctx.author.roles) or (org_league_role in ctx.author.roles) or (org_cup_role in ctx.author.roles) or (rappr_role in ctx.author.roles):
                 # Controllo degli argomenti
                 rappr_A = ctx.guild.get_member(int(input_A[3:-1]))
                 rappr_B = ctx.guild.get_member(int(input_B[3:-1]))
