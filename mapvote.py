@@ -25,16 +25,16 @@ class MapVote(commands.Cog):
         ]
 
     def MAP_POOL(self):
-        return [
-            "Acque Settentrionali",
-            "Catena Montuosa",
-            "Gigante Dormiente",
-            "Grecia",
-            "Isole di Ghiaccio",
-            "Lacrime del Deserto",
-            "Mare della Fortuna",
-            "Nord",
-            "Zona Calda"
+        return [        
+            "Acque Settentrionali", #
+            "Catena Montuosa", #
+            "Gigante Dormiente", #
+            "Lacrime del Deserto", #
+            "Mare della Fortuna", #
+            "Nord", #
+            "Terra del Fuoco", #
+            "Via del Guerriero", #
+            "Zona Calda" #
         ]
 
     def make_body(self):
@@ -171,6 +171,7 @@ class MapVote(commands.Cog):
                             descrizione = "".join(final_message)
                             # Generazione del nuovo embed
                             embed = discord.Embed(title = "WoWs Italia - Map Vote", description = descrizione, color = 0xff0000)
+                            embed.colour = discord.Colour.from_rgb(255, 255, 255)
                             # Modifica dell'embed
                             await reaction.message.edit(embed = embed)
 
