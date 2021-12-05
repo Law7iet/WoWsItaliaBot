@@ -44,8 +44,7 @@ class MapVote(commands.Cog):
             map_list[i] = emoji_list[i] + " " + map_list[i] + "\n"
         return map_list
 
-    @commands.command()
-    async def mapvote(self, ctx, input_A, input_B):
+    async def makeMapVote(self, ctx, input_A, input_B, matches):
         try:
             # Controllo dei permessi
             admin_role = ctx.guild.get_role(ROLE_ADMIN)
@@ -59,7 +58,10 @@ class MapVote(commands.Cog):
                 if rappr_A and rappr_B:
                     # Generazione del messaggio
                     message = self.make_body()
-                    message.insert(0, "<@" + str(rappr_A.id) + "> vs <@" + str(rappr_B.id) + ">\n\n")
+                    if matches == 3:
+                        message.insert(0, "Bo3: <@" + str(rappr_A.id) + "> vs <@" + str(rappr_B.id) + ">\n\n")
+                    elif matches == 5:
+                        message.insert(0, "Bo5: <@" + str(rappr_A.id) + "> vs <@" + str(rappr_B.id) + ">\n\n")
                     message.append("\nTurno di <@" + str(rappr_A.id) + "> - Fase di ban")
                     descrizione = "".join(message)
                     # Generazione dell'embed
@@ -78,11 +80,18 @@ class MapVote(commands.Cog):
             print(error)
             return
 
+    @commands.command()
+    async def mapvote3(self, ctx, input_A, input_B):
+        await self.makeMapVote(ctx, input_A, input_B, 3)
+
+    @commands.command()
+    async def mapvote5(self, ctx, input_A, input_B):
+        await self.makeMapVote(ctx, input_A, input_B, 5)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         # Identificazione del turno (chi deve reagire)
-        try:
+        # try:
             tmp = reaction.message.embeds[0].description.split("\n")[-1]
             turn = re.search(r'<@(.*?)>', tmp).group(1)
             # Controllo delle reazioni del bot stesso
@@ -108,11 +117,13 @@ class MapVote(commands.Cog):
                         # Individualizzazione degli utenti taggati            
                         rappr_A = re.findall(r'<@(.*?)>', header)[0]
                         rappr_B = re.findall(r'<@(.*?)>', header)[1]  
-                        edit = False
+                        edit = False                            
                         # Modifica del piè di pagina
                         if i < 9:
                             # La reazione indica una mappa
                             map = self.MAP_POOL()[i]
+                            print(len(footer))             
+                            print(footer)
                             # Controllo del piè di pagina per identificare il turno
                             if len(footer) == 1:
                                 # Modifica del piè di pagina
@@ -146,6 +157,27 @@ class MapVote(commands.Cog):
                                 edit = True
                                 # Rimozione della reazione del bot
                                 await reaction.message.remove_reaction(reaction, self.bot.get_user(ROLE_WOWS_ITALIA))
+                            # Bo5
+                            elif len(footer) == 5 and header[2] == '5':
+                                print('^ 2 round of pick')
+                                print(footer)
+                                print(len(footer))
+                                if footer[4] == "Turno di <@" + str(rappr_A) + "> - Fase di pick":
+                                    # Modifica del piè di pagina
+                                    footer[4] = footer[4].replace("- Fase di pick", "ha scelto " + map)
+                                    footer[4] = footer[4][9:]
+                                    footer.append("Turno di <@" + str(rappr_A) + "> - Scelta dello spawn")
+                                    edit = True
+                                    # Rimozione della reazione del bot
+                                    await reaction.message.remove_reaction(reaction, self.bot.get_user(ROLE_WOWS_ITALIA))
+                            elif len(footer) == 6 and footer[5] == "Turno di <@" + str(rappr_B) + "> - Fase di pick" and header[2] == '5':
+                                # Modifica del piè di pagina
+                                footer[5] = footer[5].replace("- Fase di pick", "ha scelto " + map)
+                                footer[5] = footer[5][9:]
+                                footer.append("Turno di <@" + str(rappr_B) + "> - Scelta dello spawn")
+                                edit = True
+                                # Rimozione della reazione del bot
+                                await reaction.message.remove_reaction(reaction, self.bot.get_user(ROLE_WOWS_ITALIA))
                         else:
                             # La reazione indica uno spawn
                             # Controllo del piè di pagina per identificare il turno
@@ -155,7 +187,7 @@ class MapVote(commands.Cog):
                                     footer[2] = footer[2] + ", spawn " + ("alpha" if i == 9 else "bravo")
                                     footer[3] = "Turno di <@" + str(rappr_B) + "> - Fase di pick"
                                     edit = True
-                            if len(footer) == 5:
+                            elif len(footer) == 5 and header[2] == '3':
                                 if footer[4] == "Turno di <@" + str(rappr_B) + "> - Scelta dello spawn":
                                     # Calcolo della mappa casuale
                                     random_choice = random.choice(reaction.message.reactions[:-2])
@@ -165,6 +197,30 @@ class MapVote(commands.Cog):
                                     # Modifica del piè di pagina
                                     footer[3] = footer[3] + ", spawn " + ("alpha" if i == 9 else "bravo")
                                     footer[4] = "Scelta casuale: " + map + ", <@" + str(rappr_A) + ">, spawn " + spawn
+                                    edit = True
+                            elif len(footer) == 5 and header[2] == '5':
+                                if footer[4] == "Turno di <@" + str(rappr_B) + "> - Scelta dello spawn":
+                                    # Modifica del piè di pagina
+                                    footer[3] = footer[3] + ", spawn " + ("alpha" if i == 9 else "bravo")
+                                    footer[4] = "Turno di <@" + str(rappr_A) + "> - Fase di pick"
+                                    edit = True
+                            elif len(footer) == 6:
+                                if footer[5] == "Turno di <@" + str(rappr_A) + "> - Scelta dello spawn":
+                                    # Modifica del piè di pagina
+                                    footer[4] = footer[4] + ", spawn " + ("alpha" if i == 9 else "bravo")
+                                    footer[5] = "Turno di <@" + str(rappr_B) + "> - Fase di pick"
+                                    edit = True
+                            elif len(footer) == 7:
+                                if footer[6] == "Turno di <@" + str(rappr_B) + "> - Scelta dello spawn":
+                                    footer[5] = footer[5] + ", spawn " + ("alpha" if i == 9 else "bravo")
+                                    # Calcolo della mappa casuale
+                                    random_choice = random.choice(reaction.message.reactions[:-2])
+                                    map_index = self.EMOJI_POOL().index(str(random_choice))
+                                    map = self.MAP_POOL()[map_index]
+                                    spawn = random.choice(["alpha", "bravo"])
+                                    # Modifica del piè di pagina
+                                    footer[4] = footer[4] + ", spawn " + ("alpha" if i == 9 else "bravo")
+                                    footer[6] = "Scelta casuale: " + map + ", <@" + str(rappr_A) + ">, spawn " + spawn
                                     edit = True
                         if edit == True:
                             # Generazione del nuovo messaggio
@@ -178,8 +234,8 @@ class MapVote(commands.Cog):
 
                         # Rimozione della reazione dell'utente
                         await reaction.message.remove_reaction(reaction, user)
-        except Exception as error:
-            print(error)
+        # except Exception as error:
+        #     print(error)
             return
 
 def setup(bot):
