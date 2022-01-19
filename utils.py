@@ -68,6 +68,7 @@ CLANS_ID = [
     "500163752", # BAIM
     "500143312", # BIG (Bastards Inside Gamers - Bastardi Dentro Ita)
     "500176210", # BREW
+    "500157573", # BTS
     "500206323", # C_S_
     "500154838", # C0LF
     "500211547", # CCCV
