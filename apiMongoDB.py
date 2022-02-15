@@ -3,6 +3,7 @@
 import pymongo
 from utils import *
 from bson import ObjectId
+import config
 
 class ApiMongoDB:
     def __init__(self):

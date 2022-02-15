@@ -1,13 +1,17 @@
 import config
 from utils import *
 
-class apiWarGaming:
+class ApiWarGaming:
     def __init__(self):
         self.urlPlayers = 'https://api.worldofwarships.eu/wows/account/list/?application_id=' + config.data["APPLICATION_ID"] + '&search='
         self.urlPlayerPersonalData = 'https://api.worldofwarships.eu/wows/account/info/?application_id=' + config.data["APPLICATION_ID"] + '&account_id='
         self.urlClans = 'https://api.worldofwarships.eu/wows/clans/list/?application_id=' + config.data["APPLICATION_ID"] + '&search='
         self.urlClanDetails = 'https://api.worldofwarships.eu/wows/clans/info/?application_id=' + config.data["APPLICATION_ID"] + '&clan_id='
         self.urlPlayerClanData = 'https://api.worldofwarships.eu/wows/clans/accountinfo/?application_id=' + config.data["APPLICATION_ID"] + '&account_id='        
+        self.urlClanRanking = 'https://clans.worldofwarships.eu/api/clanbase/'
+
+    def getUrlClanRanking(self):
+        return self.urlClanRanking
 
     # Search the first player whose nickname matches with the parameter and
     # returns its nickname and its id
@@ -17,7 +21,7 @@ class apiWarGaming:
         response = checkData(url)
         try:
             data = response['data'][0]
-            return (data['nickname'], data['account_id'])
+            return (data['account_id'], data['nickname'])
         except:
             return None
 
@@ -36,7 +40,7 @@ class apiWarGaming:
         url = self.urlClanDetails + str(id)
         response = checkData(url)
         try:
-            data = response['data'][0]
+            data = response['data']
             return (data[str(id)]['name'], data[str(id)]['tag'])
         except:
             return None

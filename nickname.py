@@ -1,7 +1,7 @@
-import fun
 import re
 from discord.ext import commands
 from utils import *
+from apiWarGaming import ApiWarGaming
 
 class Nickname(commands.Cog):
 
@@ -34,6 +34,7 @@ class Nickname(commands.Cog):
                         continue
                     # Select who has marinario
                     if guild.get_role(ROLE_MARINAIO) in member.roles:
+                        api = ApiWarGaming()
                         # select their nickname or their name if they don't have a nickname
                         user = member.display_name
                         # delete clan tag and their real name
@@ -44,27 +45,28 @@ class Nickname(commands.Cog):
                             user = re.sub(r'\(.+\)', '', user)
                             name = name.group(1)
                         # get user's nickname and his's clan tag using WoWs API
-                        player_info = fun.get_player_ID(user)
+                        player_info = api.getPlayerByNick(user)
                         try:
-                            game_nick = player_info[0]
-                            player_id = player_info[1]
-                            clan_id = fun.get_clan_ID(player_id)
+                            player_id = player_info[0]
+                            game_nick = player_info[1]
+                            clan_id = api.getClanByPlayerId(player_id)
                             # select user's nickname
                             new_nick = game_nick
-                            if clan_id != -1:
+                            if clan_id:
                                 # add his clan's tag
-                                clan_tag = fun.get_clan_name(clan_id)
-                                new_nick = '[' + clan_tag + '] ' + game_nick
+                                clanInfo = api.getClanNameById(clan_id)
+                                new_nick = '[' + clanInfo[1] + '] ' + game_nick
+
                             if name != None and len(new_nick + ' (' + name + ')') <= 32:
                                 # add his name
                                 new_nick = new_nick + ' (' + name + ')'
                             # change nickname
                             await member.edit(nick=new_nick)
-                            print(fun.my_align(member.display_name, 35, "left") + "-> " + new_nick)
+                            print(my_align(member.display_name, 35, "left") + "-> " + new_nick)
                         except:
                             #pass
-                            print(fun.my_align(member.display_name, 35, "left") + "non è stato trovato")
                             # await ctx.send('Il membro `' + user + '` non è stato trovato.')
+                            print(my_align(member.display_name, 35, "left") + "non è stato trovato")
                 await ctx.send("Aggiornamento finito")
             else:
                 await ctx.send("Permesso negato")
