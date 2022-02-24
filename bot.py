@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from utils import CH_TXT_ADMIN, ROLE_ADMIN
+from utils import *
 import config
 
 if __name__ == "__main__":
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     @bot.event
     async def on_ready():
         try:
-            channel = bot.get_channel(CH_TXT_ADMIN)
+            channel = bot.get_channel(CH_TXT_LOG_EVENT)
             await channel.send('WoWsItalia bot is up.')
         except Exception as error:
             print(error)
