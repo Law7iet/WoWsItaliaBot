@@ -125,7 +125,7 @@ class Ranking(commands.Cog):
                 x = self.my_rank()
                 pos = 1
                 league_index = 0
-                channel = self.bot.get_channel(CH_TXT_CB)
+                channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB)
                 # channel = self.bot.get_channel(CH_TXT_ADMIN)
                 await channel.send('**Risultati Clan Battle Season ' + str(self.apiMongo.getConfig()['CBCurrentSeason']) + '**')
                 for league in x:
@@ -154,7 +154,8 @@ class Ranking(commands.Cog):
                         division_index = division_index + 1
                     league_index = league_index + 1
                 # Last message
-                await channel.send(prev)
+                message = await channel.send(prev)
+                await message.publish()
                 print(prev + '\n')
             else:
                 await ctx.send('Permesso negato')
