@@ -125,7 +125,7 @@ class Ranking(commands.Cog):
                 pos = 1
                 league_index = 0
                 channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB)
-                channel = self.bot.get_channel(CH_TXT_ADMIN)
+                # channel = self.bot.get_channel(CH_TXT_ADMIN)
                 messageList = ['**Risultati Clan Battle Season ' + str(self.apiMongo.getConfig()['CBCurrentSeason']) + '**\n']
                 for league in x:
                     division_index = 1
