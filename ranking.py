@@ -119,7 +119,6 @@ class Ranking(commands.Cog):
     @commands.command()
     async def ranking(self, ctx):
         try:
-            prev = ''
             admin_role = ctx.guild.get_role(ROLE_ADMIN)
             if admin_role in ctx.author.roles:
                 x = self.my_rank()
@@ -127,7 +126,7 @@ class Ranking(commands.Cog):
                 league_index = 0
                 channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB)
                 # channel = self.bot.get_channel(CH_TXT_ADMIN)
-                await channel.send('**Risultati Clan Battle Season ' + str(self.apiMongo.getConfig()['CBCurrentSeason']) + '**')
+                messageList = ['**Risultati Clan Battle Season ' + str(self.apiMongo.getConfig()['CBCurrentSeason']) + '**\n']
                 for league in x:
                     division_index = 1
                     for division in league:
@@ -145,18 +144,23 @@ class Ranking(commands.Cog):
                             pos = pos + 1
                         message = message + '\n```'
                         if division:
-                            if len(prev + message) < 1900:
-                                prev = prev + message
-                            else:    
-                                await channel.send(prev)
-                                print(prev + '\n')
-                                prev = message
+                            messageList.append(message)
                         division_index = division_index + 1
                     league_index = league_index + 1
-                # Last message
-                message = await channel.send(prev)
-                await message.publish()
-                print(prev + '\n')
+                # Send and publish message
+                while len(messageList) != 0:
+                    flag = False
+                    if len(messageList) > 1:
+                        if len(messageList[0] + messageList[1]) < 1900:
+                                messageList[0] = messageList[0] + messageList.pop(1)
+                        else:
+                            flag = True
+                    else:
+                        flag = True
+                    if flag:
+                        print(messageList[0] + '\n')
+                        sentMessage = await channel.send(messageList.pop(0))
+                        await sentMessage.publish()
             else:
                 await ctx.send('Permesso negato')
         except Exception as error:
