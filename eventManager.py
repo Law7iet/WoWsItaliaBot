@@ -8,7 +8,7 @@ class EventManager(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.bot and message.channel.id == CH_TXT_DEV_BLOG:
-            message.publish()
+            await message.publish()
 
 def setup(bot):
     bot.add_cog(EventManager(bot))
