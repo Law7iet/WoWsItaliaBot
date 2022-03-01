@@ -12,7 +12,7 @@ if __name__ == "__main__":
     bot = commands.Bot(command_prefix = ">", intents = intents)
     bot.remove_command("help")
 
-    extensions = ["mod", "mapvote", "nickname", "podio", "ranking"]
+    extensions = ["mod", "mapvote", "nickname", "podio", "ranking", "eventManager"]
     for extension in extensions:
         try:
             bot.load_extension(extension)
