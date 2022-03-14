@@ -1,108 +1,110 @@
 # Documentation: https://developers.wargaming.net/reference/all/wows/account/list/?r_realm=eu&run=1
 
-from utils.constants import *
-from utils.functions import *
-import config
 import json
 
-class ApiWarGaming:
-    def __init__(self):
-        self.urlPlayers = 'https://api.worldofwarships.eu/wows/account/list/?application_id=' + config.data["APPLICATION_ID"] + '&search='
-        self.urlPlayerPersonalData = 'https://api.worldofwarships.eu/wows/account/info/?application_id=' + config.data["APPLICATION_ID"] + '&account_id='
-        self.urlClans = 'https://api.worldofwarships.eu/wows/clans/list/?application_id=' + config.data["APPLICATION_ID"] + '&search='
-        self.urlClanDetails = 'https://api.worldofwarships.eu/wows/clans/info/?application_id=' + config.data["APPLICATION_ID"] + '&clan_id='
-        self.urlPlayerClanData = 'https://api.worldofwarships.eu/wows/clans/accountinfo/?application_id=' + config.data["APPLICATION_ID"] + '&account_id='        
-        self.urlClanRanking = 'https://clans.worldofwarships.eu/api/clanbase/'
+from config import data
+from utils.functions import *
 
-    def getClanRanking(self, clanId: int) -> list:
-        '''
+
+class ApiWargaming:
+    def __init__(self):
+        self.key = data["APPLICATION_ID"]
+        self.url_api_root = 'https://api.worldofwarships.eu/wows/'
+        self.url_players = 'account/list/?application_id=' + self.key + '&search='
+        self.url_player_data = 'account/info/?application_id=' + self.key + '&account_id='
+        self.url_clans = 'clans/list/?application_id=' + self.key + '&search='
+        self.url_clan_details = 'clans/info/?application_id=' + self.key + '&clan_id='
+        self.url_player_clan_data = 'clans/accountinfo/?application_id=' + self.key + '&account_id='
+        self.ur_clan_ranking = 'https://clans.worldofwarships.eu/api/clanbase/'
+
+    def get_clan_ranking(self, clan_id: str) -> list:
+        """
         Returns the ratings of a clan.
-        The ratings is divided by 'season_number'.
-        Each season number has 2 istance of rating, defined by 'team_number' and it represents alpha and bravo squad.
+        The ratings are divided by `season_number`.
+        Each `season_number` has 2 instance of rating, defined by `team_number` and it represents alpha (1) and bravo
+        (2) squad.
 
         Args:
-            `clanId` (int): the clan ID.
+            clan_id: the clan ID.
 
         Returns:
-            `list`: the list of ratings.
-        '''
-        url = self.urlClanRanking + str(clanId) + '/claninfo/'
+            the list of ratings.
+        """
+        url = self.ur_clan_ranking + clan_id + '/claninfo/'
         try:
-            return json.loads((requests.get(url = url)).text)['clanview']['wows_ladder']['ratings']
+            # api call
+            return json.loads((requests.get(url=url)).text)['clanview']['wows_ladder']['ratings']
         except:
             return []
 
-    def getPlayerByNick(self, nickname: str) -> tuple | None:
-        '''
+    def get_player_by_nick(self, nickname: str) -> tuple | None:
+        """
         Search the first player whose nickname matches with the parameter and returns its nickname and its ID.
 
         Args:
-            `nickname` (str): the nickname.
+            nickname: the nickname.
 
         Returns:
-            `tuple`: it contains the id and nickname. If the input nickname doesn't match with any player, it returns `None`.
-        '''        
-        url = self.urlPlayers + nickname
+            it contains the player_id and nickname. If the input nickname doesn't match with any player, it returns
+             "None".
+        """
+        url = self.url_players + nickname
         # api call and check if the response is ok
         response = checkData(url)
         try:
-            data = response['data'][0]
-            return (data['account_id'], data['nickname'])
+            return response['data'][0]['account_id'], response['data'][0]['nickname']
         except:
             return None
 
-    def getPlayerById(self, id: str) -> tuple | None:
-        '''
+    def get_player_by_id(self, player_id: str) -> tuple | None:
+        """
         Search the player whose ID matches with the parameter and returns its nickname and its ID.
 
         Args:
-            `nickname` (str): the nickname.
+            player_id: the nickname.
 
         Returns:
-            `tuple`: it contains the id and nickname. If the input nickname doesn't match with any player, it returns `None`.
-        '''
-        url = self.urlPlayerPersonalData + id
+            it contains the player_id and nickname. If the input nickname doesn't match with any player, it returns
+             "None".
+        """
+        url = self.url_player_data + player_id
         # api call and check if the response is ok
         response = checkData(url)
         try:
-            data = response['data'][str(id)]
-            return (data['account_id'], data['nickname'])
+            return response['data'][player_id]['account_id'], response['data'][player_id]['nickname']
         except:
             return None
 
+    def get_clan_by_player_id(self, player_id: str) -> tuple | None:
+        """
+        Search the player's clan's player_id by the player's ID.
 
-    def getClanByPlayerId(self, id: int) -> tuple | None:
-        '''
-        Search the player's clan's id by the player's ID.
-        
         Args:
-            `id` (int): the ID of the player.
+            player_id: the ID of the player.
 
         Returns:
-            `tuple`: it contains the clan ID. If the player has not a clan, it returns `None`.
-        '''        
-        url = self.urlPlayerClanData + str(id)
+            it contains the clan ID. If the player has not a clan, it returns `None`.
+        """
+        url = self.url_player_clan_data + player_id
         response = checkData(url)
         try:
-            data = response['data']
-            return (data[str(id)]['clan_id'])
+            return tuple(response['data'][player_id]['clan_id'])
         except:
             return None
 
-    def getClanNameById(self, id: int) -> tuple | None:
-        '''
+    def get_clan_name_by_id(self, clan_id: str) -> tuple | None:
+        """
         Get the clan's name and tag by the clan's ID.
 
         Args:
-            `id` (int): the ID of the clan
+            clan_id: the ID of the clan
 
         Returns:
-            `tuple` | `None`: it contains the clan name and clan tag. If the ID isn't valid, it returns `None`.
-        '''        
-        url = self.urlClanDetails + str(id)
+            it contains the clan name and clan tag. If the ID isn't valid, it returns `None`.
+        """
+        url = self.url_clan_details + clan_id
         response = checkData(url)
         try:
-            data = response['data']
-            return (data[str(id)]['name'], data[str(id)]['tag'])
+            return response['data'][clan_id]['name'], response['data'][clan_id]['tag']
         except:
             return None
