@@ -1,5 +1,5 @@
 from discord.ext import commands
-from utils import *
+from utils.constants import CH_TXT_DEV_BLOG
 
 class EventManager(commands.Cog):
     def __init__(self, bot):

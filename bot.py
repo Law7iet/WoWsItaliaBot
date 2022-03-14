@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from utils import *
+from utils.constants import CH_TXT_LOG_EVENT
 import config
 
 if __name__ == "__main__":
@@ -12,10 +12,10 @@ if __name__ == "__main__":
     bot = commands.Bot(command_prefix = ">", intents = intents)
     bot.remove_command("help")
 
-    extensions = ["mod", "mapvote", "nickname", "podio", "ranking"]
+    extensions = ["moderation", "mapVote", "nickname", "tournamentRanking", "clanBattleRanking", "eventManager"]
     for extension in extensions:
         try:
-            bot.load_extension(extension)
+            bot.load_extension("extentions." + extension)
         except Exception as error:
             print("{} cannot be loaded. [{}]".format(extension, error))
 

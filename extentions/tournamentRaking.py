@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
-from utils import *
+from utils.constants import CH_TXT_PODIO_CUP, CH_TXT_PODIO_LEAGUE
 
-class Podio(commands.Cog):
+class TournamentRanking(commands.Cog):
 
     torneo = {
         "1": ["Primo", 0xFFD700],
@@ -49,4 +49,4 @@ class Podio(commands.Cog):
             return
             
 def setup(bot):
-    bot.add_cog(Podio(bot))
+    bot.add_cog(TournamentRanking(bot))

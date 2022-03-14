@@ -2,7 +2,7 @@ import discord
 import random
 import re
 from discord.ext import commands
-from utils import *
+from utils.constants import *
 
 class MapVote(commands.Cog):
 
@@ -44,7 +44,7 @@ class MapVote(commands.Cog):
             map_list[i] = emoji_list[i] + " " + map_list[i] + "\n"
         return map_list
 
-    async def makeMapVote(self, ctx, input_A, input_B, matches):
+    async def makeMapVote(self, ctx: commands.context.Context, input_A, input_B, matches):
         try:
             # Controllo dei permessi
             admin_role = ctx.guild.get_role(ROLE_ADMIN)
@@ -81,11 +81,11 @@ class MapVote(commands.Cog):
             return
 
     @commands.command()
-    async def mapvote3(self, ctx, input_A, input_B):
+    async def mapvote3(self, ctx: commands.context.Context, input_A, input_B):
         await self.makeMapVote(ctx, input_A, input_B, 3)
 
     @commands.command()
-    async def mapvote5(self, ctx, input_A, input_B):
+    async def mapvote5(self, ctx: commands.context.Context, input_A, input_B):
         await self.makeMapVote(ctx, input_A, input_B, 5)
 
     @commands.Cog.listener()

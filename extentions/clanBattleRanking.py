@@ -1,9 +1,10 @@
 import json
 import requests
 from discord.ext import commands
-from utils import *
-from apiMongoDB import ApiMongoDB
-from apiWarGaming import ApiWarGaming
+from utils.constants import *
+from utils.functions import my_align
+from api.apiMongoDB import ApiMongoDB
+from api.apiWarGaming import ApiWarGaming
 
 class Clan:
     def __init__(self, tag, squadra, winrate, battles, lega, divisione, punteggio, promozione):
@@ -25,7 +26,7 @@ class Clan:
         else:
             return '[' + promozione[:-2] + ']'
 
-class Ranking(commands.Cog):
+class ClanBattleRanking(commands.Cog):
 
     leagueType = [
         'Uragano',
@@ -117,7 +118,7 @@ class Ranking(commands.Cog):
         return clanBattleRanking
 
     @commands.command()
-    async def ranking(self, ctx):
+    async def ranking(self, ctx: commands.context.Context):
         try:
             admin_role = ctx.guild.get_role(ROLE_ADMIN)
             if admin_role in ctx.author.roles:
@@ -168,4 +169,4 @@ class Ranking(commands.Cog):
             return
 
 def setup(bot):
-    bot.add_cog(Ranking(bot))
+    bot.add_cog(ClanBattleRanking(bot))
