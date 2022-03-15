@@ -1,4 +1,5 @@
 discord.py
-pymongo
-requests
+pymongo~=4.0.2
+requests~=2.27.1
 dnspython
+validators~=0.18.2

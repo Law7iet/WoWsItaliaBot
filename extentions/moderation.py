@@ -1,35 +1,35 @@
-from api.apiWarGaming import ApiWarGaming
-from discord.ext import commands
-from utils.constants import *
-from utils.functions import my_align
 import re
 
-class Moderation(commands.Cog):
+from discord.ext import commands
 
-    def __init__(self, bot: commands.Cog):
+from api.wargaming import ApiWargaming
+from utils.constants import *
+from utils.functions import my_align
+
+
+class Moderation(commands.Cog):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command()
-    async def write(self, ctx: commands.context.Context, channel_id, *message):
+    async def write(self, ctx: commands.context.Context, channel_id: str, *, message: str):
         try:
             admin_role = ctx.guild.get_role(ROLE_ADMIN)
             if admin_role in ctx.author.roles:
                 guild = ctx.guild
                 # Discord 1.7.3
-                # channel = guild.get_channel(int(channel_id))
-                channel = guild.get_channel_or_thread(int(channel_id))
-                text = ""
-                for word in message:
-                    text = text + " " + word
-                await channel.send(text)
+                # channel = guild.get_channel(int(channel_id)) if not DEBUG else self.bot.get_channel(CH_TXT_ADMIN)
+                channel = guild.get_channel_or_thread(int(channel_id)) if not DEBUG else self.bot.get_channel(
+                    CH_TXT_ADMIN)
+                await channel.send(message)
             else:
-                await ctx.send("Permesso negato")    
+                await ctx.send("Permesso negato")
         except Exception as error:
             print(error)
             return
-    
+
     @commands.command()
-    async def edit(self, ctx: commands.context.Context, channel_id, message_id, *new_message):
+    async def edit(self, ctx: commands.context.Context, channel_id: str, message_id: str, *, new_message: str):
         try:
             admin_role = ctx.guild.get_role(ROLE_ADMIN)
             if admin_role in ctx.author.roles:
@@ -38,10 +38,7 @@ class Moderation(commands.Cog):
                 # channel = guild.get_channel(int(channel_id))
                 channel = guild.get_channel_or_thread(int(channel_id))
                 message = await channel.fetch_message(int(message_id))
-                text = ""
-                for word in new_message:
-                    text = text + " " + word
-                await message.edit(content = text)
+                await message.edit(content=new_message)
             else:
                 await ctx.send("Permesso negato")
         except Exception as error:
@@ -58,7 +55,7 @@ class Moderation(commands.Cog):
                 members = guild.members
                 for member in members:
                     # Print check
-                    #print(fun.my_align(member.display_name, 35, "left"))
+                    # print(fun.my_align(member.display_name, 35, "left"))
                     # Skip if member has admin, mod, cc, cm, org tag
                     if guild.get_role(ROLE_ADMIN) in member.roles:
                         continue
@@ -72,39 +69,40 @@ class Moderation(commands.Cog):
                         continue
                     if guild.get_role(ROLE_ORG_LEAGUE) in member.roles:
                         continue
-                    # Select who has marinario
+                    # Select who has "marinario" role
                     if guild.get_role(ROLE_MARINAIO) in member.roles:
-                        api = ApiWarGaming()
+                        api = ApiWargaming()
                         # select their nickname or their name if they don't have a nickname
                         user = member.display_name
                         # delete clan tag and their real name
-                        user = re.sub(r'\[.+\]', '', user)
+                        user = re.sub(r'[.+]', '', user)
                         user = user.lstrip()
                         name = re.search(r'\(([A-Za-z0-9_]+)\)', user)
-                        if name != None:
+                        if name is not None:
                             user = re.sub(r'\(.+\)', '', user)
                             name = name.group(1)
-                        # get user's nickname and his's clan tag using WoWs API
-                        player_info = api.getPlayerByNick(user)
+                        # get user's nickname and his clan tag using WoWs API
+                        player_info = api.get_player_by_nick(user)
                         try:
                             player_id = player_info[0]
                             game_nick = player_info[1]
-                            clan_id = api.getClanByPlayerId(player_id)
+                            clan_id = api.get_clan_by_player_id(player_id)
                             # select user's nickname
                             new_nick = game_nick
                             if clan_id:
                                 # add his clan's tag
-                                clanInfo = api.getClanNameById(clan_id)
+                                clanInfo = api.get_clan_name_by_id(clan_id[0])
                                 new_nick = '[' + clanInfo[1] + '] ' + game_nick
 
-                            if name != None and len(new_nick + ' (' + name + ')') <= 32:
+                            if name is not None and len(new_nick + ' (' + name + ')') <= 32:
                                 # add his name
                                 new_nick = new_nick + ' (' + name + ')'
                             # change nickname
-                            await member.edit(nick=new_nick)
-                            print(my_align(member.display_name, 35, "left") + "-> " + new_nick)
+                            if new_nick is not member.display_name:
+                                await member.edit(nick=new_nick)
+                                print(my_align(member.display_name, 35, "left") + "-> " + new_nick)
                         except:
-                            #pass
+                            # pass
                             # await ctx.send('Il membro `' + user + '` non è stato trovato.')
                             print(my_align(member.display_name, 35, "left") + "non è stato trovato")
                 await ctx.send("Aggiornamento finito")
@@ -113,6 +111,7 @@ class Moderation(commands.Cog):
         except Exception as error:
             print(error)
             return
+
 
 def setup(bot):
     bot.add_cog(Moderation(bot))

@@ -34,7 +34,8 @@ class ApiWargaming:
         try:
             # api call
             return json.loads((requests.get(url=url)).text)['clanview']['wows_ladder']['ratings']
-        except:
+        except Exception as error:
+            print(error)
             return []
 
     def get_player_by_nick(self, nickname: str) -> tuple | None:
@@ -50,10 +51,11 @@ class ApiWargaming:
         """
         url = self.url_players + nickname
         # api call and check if the response is ok
-        response = checkData(url)
+        response = check_data(url)
         try:
             return response['data'][0]['account_id'], response['data'][0]['nickname']
-        except:
+        except Exception as error:
+            print(error)
             return None
 
     def get_player_by_id(self, player_id: str) -> tuple | None:
@@ -69,10 +71,11 @@ class ApiWargaming:
         """
         url = self.url_player_data + player_id
         # api call and check if the response is ok
-        response = checkData(url)
+        response = check_data(url)
         try:
             return response['data'][player_id]['account_id'], response['data'][player_id]['nickname']
-        except:
+        except Exception as error:
+            print(error)
             return None
 
     def get_clan_by_player_id(self, player_id: str) -> tuple | None:
@@ -86,10 +89,11 @@ class ApiWargaming:
             it contains the clan ID. If the player has not a clan, it returns `None`.
         """
         url = self.url_player_clan_data + player_id
-        response = checkData(url)
+        response = check_data(url)
         try:
             return tuple(response['data'][player_id]['clan_id'])
-        except:
+        except Exception as error:
+            print(error)
             return None
 
     def get_clan_name_by_id(self, clan_id: str) -> tuple | None:
@@ -103,8 +107,9 @@ class ApiWargaming:
             it contains the clan name and clan tag. If the ID isn't valid, it returns `None`.
         """
         url = self.url_clan_details + clan_id
-        response = checkData(url)
+        response = check_data(url)
         try:
             return response['data'][clan_id]['name'], response['data'][clan_id]['tag']
-        except:
+        except Exception as error:
+            print(error)
             return None
