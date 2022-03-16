@@ -83,6 +83,9 @@ class Moderation(commands.Cog):
                             name = name.group(1)
                         # get user's nickname and his clan tag using WoWs API
                         player_info = api.get_player_by_nick(user)
+                        if not player_info:
+                            print(my_align(member.display_name, 35, "left") + "non è stato trovato")
+                            continue
                         try:
                             player_id = player_info[0]
                             game_nick = player_info[1]
@@ -101,15 +104,16 @@ class Moderation(commands.Cog):
                             if new_nick is not member.display_name:
                                 await member.edit(nick=new_nick)
                                 print(my_align(member.display_name, 35, "left") + "-> " + new_nick)
-                        except:
-                            # pass
+                        except Exception as error:
+                            print("api.get_player_by_nick(user)")
+                            pass
                             # await ctx.send('Il membro `' + user + '` non è stato trovato.')
-                            print(my_align(member.display_name, 35, "left") + "non è stato trovato")
+
                 await ctx.send("Aggiornamento finito")
             else:
                 await ctx.send("Permesso negato")
         except Exception as error:
-            print(error)
+            # print(error)
             return
 
 

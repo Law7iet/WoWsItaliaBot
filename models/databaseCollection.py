@@ -3,7 +3,6 @@ from enum import Enum
 
 
 class DatabaseCollection(Enum):
-    _init_ = 0, ''
     CONFIG = 1, 'Config'
     CLANS = 2, 'Clans'
 

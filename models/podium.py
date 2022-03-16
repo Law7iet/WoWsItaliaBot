@@ -3,7 +3,6 @@ from enum import Enum
 
 
 class TournamentEnum(Enum):
-    _init_ = -1, ''
     LEAGUE = 0, "League"
     CUP = 1, "Cup"
 
@@ -15,7 +14,6 @@ class TournamentEnum(Enum):
 
 
 class PodiumEnum(Enum):
-    _init_ = -1, 0x000000, ''
     OTHER = 0, 0xFFFFFF, ''
     FIRST = 1, 0xFFD700, 'Primo'
     SECOND = 2, 0xC0C0C0, 'Secondo'

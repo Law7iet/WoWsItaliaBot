@@ -10,11 +10,11 @@ class ApiWargaming:
     def __init__(self):
         self.key = data["APPLICATION_ID"]
         self.url_api_root = 'https://api.worldofwarships.eu/wows/'
-        self.url_players = 'account/list/?application_id=' + self.key + '&search='
-        self.url_player_data = 'account/info/?application_id=' + self.key + '&account_id='
-        self.url_clans = 'clans/list/?application_id=' + self.key + '&search='
-        self.url_clan_details = 'clans/info/?application_id=' + self.key + '&clan_id='
-        self.url_player_clan_data = 'clans/accountinfo/?application_id=' + self.key + '&account_id='
+        self.url_players = self.url_api_root + 'account/list/?application_id=' + self.key + '&search='
+        self.url_player_data = self.url_api_root + 'account/info/?application_id=' + self.key + '&account_id='
+        self.url_clans = self.url_api_root + 'clans/list/?application_id=' + self.key + '&search='
+        self.url_clan_details = self.url_api_root + 'clans/info/?application_id=' + self.key + '&clan_id='
+        self.url_player_clan_data = self.url_api_root + 'clans/accountinfo/?application_id=' + self.key + '&account_id='
         self.ur_clan_ranking = 'https://clans.worldofwarships.eu/api/clanbase/'
 
     def get_clan_ranking(self, clan_id: str) -> list:

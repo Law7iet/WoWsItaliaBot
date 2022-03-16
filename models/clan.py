@@ -3,7 +3,6 @@ from enum import Enum
 
 
 class LeagueTypeEnum(Enum):
-    _init_ = -1, ''
     HURRICANE = 0, 'Uragano'
     TYPHOON = 1, 'Tifone'
     STORM = 2, 'Tempesta'
@@ -18,7 +17,6 @@ class LeagueTypeEnum(Enum):
 
 
 class LeagueColorEnum(Enum):
-    _init_ = -1, ''
     HURRICANE = 0, ':purple_square:'
     TYPHOON = 1, ':green_square:'
     STORM = 2, ':yellow_square:'
