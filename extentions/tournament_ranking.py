@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 from utils.constants import *
 from models.podium import *
-import validators
 
 
 def podio(torneo: TournamentEnum, edizione: int, posizione: int, team: str, immagine: str, partecipanti: tuple[str]):
@@ -14,20 +13,20 @@ def podio(torneo: TournamentEnum, edizione: int, posizione: int, team: str, imma
         case _:
             return None
     match posizione:
-        case int(PodiumEnum.FIRST):
+        case PodiumEnum.FIRST.value:
             classificato = PodiumEnum.FIRST
-        case int(PodiumEnum.SECOND):
+        case PodiumEnum.SECOND.value:
             classificato = PodiumEnum.SECOND
-        case int(PodiumEnum.THIRD):
+        case PodiumEnum.THIRD.value:
             classificato = PodiumEnum.THIRD
         case _:
             classificato = PodiumEnum.OTHER
-    color = hex(classificato)
+    color = int(classificato)
     if posizione is not PodiumEnum.OTHER:
-        descrizione = str(classificato) + " classificato dell\'Italian " + str(evento) + str(edizione) + "."
+        descrizione = str(classificato) + " classificato dell\'Italian " + str(evento) + " " + str(edizione) + "."
     else:
         descrizione = "Partecipante dell\'Italian " + str(evento) + str(edizione) + "."
-    embed = discord.Embed(title=team, description=descrizione, color=color)
+    embed = discord.Embed(title=team, description=descrizione, color=discord.Colour(int(color)))
     embed.set_thumbnail(url=immagine)
     embed.set_footer(text="Congratulazioni!")
     if partecipanti:
@@ -47,12 +46,12 @@ class TournamentRanking(commands.Cog):
     async def league(self, ctx: commands.context.Context, edizione: str, posizione: str, team: str, immagine: str,
                      *partecipanti: str):
         try:
-            if not (edizione.isdigit()) or not (posizione.isdigit() or not (validators.url(immagine))):
+            if not (edizione.isdigit()) or not (posizione.isdigit()):
                 return
             embed = podio(TournamentEnum.LEAGUE, int(edizione), int(posizione), team, immagine, partecipanti)
             if not embed:
                 return
-            channel = self.bot.get_channel(CH_TXT_PODIO_LEAGUE) if not DEBUG else self.bot.get_channel(CH_TXT_ADMIN)
+            channel = self.bot.get_channel(CH_TXT_PODIO_LEAGUE) if not DEBUG else self.bot.get_channel(CH_TXT_TESTING)
             await channel.send(embed=embed)
         except Exception as error:
             print(error)
@@ -66,7 +65,7 @@ class TournamentRanking(commands.Cog):
             embed = podio(TournamentEnum.CUP, int(edizione), int(posizione), team, immagine, *partecipanti)
             if not embed:
                 return
-            channel = self.bot.get_channel(CH_TXT_PODIO_CUP) if not DEBUG else self.bot.get_channel(CH_TXT_ADMIN)
+            channel = self.bot.get_channel(CH_TXT_PODIO_CUP) if not DEBUG else self.bot.get_channel(CH_TXT_TESTING)
             await channel.send(embed=embed)
         except Exception as error:
             print(error)

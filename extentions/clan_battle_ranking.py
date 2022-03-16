@@ -102,7 +102,7 @@ class ClanBattleRanking(commands.Cog):
                 pos = 1
                 league_index = 0
                 channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not DEBUG else self.bot.get_channel(
-                    CH_TXT_ADMIN)
+                    CH_TXT_TESTING)
                 message_list = ['**Risultati Clan Battle Season ' + str(self.apiMongo.get_config()['CBCurrentSeason'])
                                 + '**\n']
                 for league in x:
@@ -117,7 +117,7 @@ class ClanBattleRanking(commands.Cog):
                             body = body + my_align(clan.win_rate, 7, 'right') + ' - '
                             body = body + my_align(str(clan.battles), 3, 'right') + ' -   '
                             body = body + my_align(str(clan.score), 2, 'right') + '  - '
-                            body = body + clan.getPromoInString()
+                            body = body + clan.convert_promo_to_string()
                             message = message + body + '\n'
                             pos = pos + 1
                         message = message + '\n```'

@@ -27,9 +27,12 @@ A specific role can pick/ban for the user and close the session.
 A specific user can trigger this command. It makes the pick and ban of the ships.
 The structure il already implemented, it misses the embed message (currently the bot sends raw message).
 
+6. CheckRole
+A function to check if a user has a role. Hierarchy of the roles?
+
 ## DB
 After reading the TODO paragraph, the missing data in the database are:
-- a collection for autenticated user (?)
+- a collection for authenticated user (?)
 - a collection for the mapVote session
 - a config file with mapVote maps, type of game (Best of ?), who can trigger the command
 - a collection for the pick&ban session

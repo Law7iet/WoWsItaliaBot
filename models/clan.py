@@ -3,31 +3,53 @@ from enum import Enum
 
 
 class LeagueTypeEnum(Enum):
-    HURRICANE = 0, 'Uragano'
-    TYPHOON = 1, 'Tifone'
-    STORM = 2, 'Tempesta'
-    GALE = 3, 'Burrasca'
-    SQUALL = 4, 'Temporale'
+    HURRICANE = 0
+    TYPHOON = 1
+    STORM = 2
+    GALE = 3
+    SQUALL = 4
 
     def __index__(self):
-        return self.value[0]
+        return self.value
 
     def __str__(self):
-        return self.value[1]
+        match self.value:
+            case 0:
+                return 'Uragano'
+            case 1:
+                return 'Tifone'
+            case 2:
+                return 'Tempesta'
+            case 3:
+                return 'Burrasca'
+            case 4:
+                return 'Temporale'
 
 
 class LeagueColorEnum(Enum):
-    HURRICANE = 0, ':purple_square:'
-    TYPHOON = 1, ':green_square:'
-    STORM = 2, ':yellow_square:'
-    GALE = 3, ':white_large_square:'
-    SQUALL = 4, ':brown_square:'
+    HURRICANE = 0
+    TYPHOON = 1
+    STORM = 2
+    GALE = 3
+    SQUALL = 4
 
     def __index__(self):
-        return self.value[0]
+        return self.value
 
     def __str__(self):
-        return self.value[1]
+        match self.value:
+            case 0:
+                return ':purple_square:'
+            case 1:
+                return ':green_square:'
+            case 2:
+                return ':yellow_square:'
+            case 3:
+                return ':white_large_square:'
+            case 4:
+                return ':brown_square:'
+            case _:
+                return ''
 
 
 class Clan:
