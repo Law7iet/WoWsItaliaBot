@@ -4,7 +4,8 @@ from api.mongo_db import ApiMongoDB
 from api.wargaming import ApiWargaming
 from models.clan import *
 from utils.constants import *
-from utils.functions import my_align
+from utils.functions import my_align, check_role
+from models.roles import RolesEnum
 
 
 class ClanBattleRanking(commands.Cog):
@@ -95,55 +96,55 @@ class ClanBattleRanking(commands.Cog):
 
     @commands.command()
     async def ranking(self, ctx: commands.context.Context):
+        if not check_role(ctx, RolesEnum.ADMIN):
+            return
         try:
-            admin_role = ctx.guild.get_role(ROLE_ADMIN)
-            if admin_role in ctx.author.roles:
-                x = self.my_rank()
-                pos = 1
-                league_index = 0
-                channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not DEBUG else self.bot.get_channel(
-                    CH_TXT_TESTING)
-                message_list = ['**Risultati Clan Battle Season ' + str(self.apiMongo.get_config()['CBCurrentSeason'])
-                                + '**\n']
-                for league in x:
-                    division_index = 1
-                    for division in league:
-                        message = str(LeagueColorEnum(league_index)) + ' **Lega ' + str(LeagueTypeEnum(league_index)) \
-                                  + ' - Divisione ' + str(division_index) + '**\n'
-                        message = message + '```\n### Clan    - WinRate - Btl - Score - Promo\n'
-                        for clan in division:
-                            body = my_align(str(pos), 3, 'right') + ' '
-                            body = body + my_align(clan.tag, 5, 'left') + ' ' + clan.squad + ' - '
-                            body = body + my_align(clan.win_rate, 7, 'right') + ' - '
-                            body = body + my_align(str(clan.battles), 3, 'right') + ' -   '
-                            body = body + my_align(str(clan.score), 2, 'right') + '  - '
-                            body = body + clan.convert_promo_to_string()
-                            message = message + body + '\n'
-                            pos = pos + 1
-                        message = message + '\n```'
-                        if division:
-                            message_list.append(message)
-                        division_index = division_index + 1
-                    league_index = league_index + 1
-                # Send and publish message
-                while len(message_list) != 0:
-                    flag = False
-                    if len(message_list) > 1:
-                        if len(message_list[0] + message_list[1]) < 1900:
-                            message_list[0] = message_list[0] + message_list.pop(1)
-                        else:
-                            flag = True
+            x = self.my_rank()
+            pos = 1
+            league_index = 0
+            channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not DEBUG else self.bot.get_channel(
+                CH_TXT_TESTING)
+            message_list = ['**Risultati Clan Battle Season ' + str(self.apiMongo.get_config()['CBCurrentSeason'])
+                            + '**\n']
+            # Add clans in the message
+            for league in x:
+                division_index = 1
+                for division in league:
+                    message = str(LeagueColorEnum(league_index)) + ' **Lega ' + str(LeagueTypeEnum(league_index)) \
+                              + ' - Divisione ' + str(division_index) + '**\n'
+                    message = message + '```\n### Clan    - WinRate - Btl - Score - Promo\n'
+                    for clan in division:
+                        body = my_align(str(pos), 3, 'right') + ' '
+                        body = body + my_align(clan.tag, 5, 'left') + ' ' + clan.squad + ' - '
+                        body = body + my_align(clan.win_rate, 7, 'right') + ' - '
+                        body = body + my_align(str(clan.battles), 3, 'right') + ' -   '
+                        body = body + my_align(str(clan.score), 2, 'right') + '  - '
+                        body = body + clan.convert_promo_to_string()
+                        message = message + body + '\n'
+                        pos = pos + 1
+                    message = message + '\n```'
+                    if division:
+                        message_list.append(message)
+                    division_index = division_index + 1
+                league_index = league_index + 1
+            # Send and publish the message
+            while len(message_list) != 0:
+                flag = False
+                if len(message_list) > 1:
+                    if len(message_list[0] + message_list[1]) < 1900:
+                        message_list[0] = message_list[0] + message_list.pop(1)
                     else:
                         flag = True
-                    if flag:
-                        print(message_list[0] + '\n')
-                        sentMessage = await channel.send(message_list.pop(0))
-                        # await sentMessage.publish()
-            else:
-                await ctx.send('Permesso negato')
+                else:
+                    flag = True
+                if flag:
+                    print(message_list[0] + '\n')
+                    sentMessage = await channel.send(message_list.pop(0))
+                    if not DEBUG:
+                        await sentMessage.publish()
         except Exception as error:
-            print(error)
-            return
+            await self.bot.get_channel(CH_TXT_TESTING).send("**>ranking command exception**")
+            await self.bot.get_channel(CH_TXT_TESTING).send("```" + error + "```")
 
 
 def setup(bot):

@@ -7,10 +7,16 @@ class TournamentEnum(Enum):
     CUP = 1, "Cup"
 
     def __index__(self):
-        return self.value[0]
+        return self.value
 
     def __str__(self):
-        return self.value[1]
+        match self.value:
+            case 0:
+                return "League"
+            case 1:
+                return "Cup"
+            case _:
+                return ''
 
 
 class PodiumEnum(Enum):

@@ -1,4 +1,7 @@
 import requests
+from discord.ext.commands.context import Context
+
+from models.roles import RolesEnum
 from utils.constants import CONFIG_ID
 
 
@@ -21,6 +24,27 @@ def check_data(url: str) -> dict | None:
         return None
     else:
         return data
+
+
+def check_role(ctx: Context, level_role: RolesEnum) -> bool:
+    """
+    Check if the user has the privileges. The user is the author of the message of the context. The privileges are
+ based on server's roles. The roles levels are defined by `RolesEnum` class.
+
+    Args:
+         ctx: the context.
+         level_role: the minimum RolesEnum that the user must have.
+
+     Returns:
+         a boolean that states if the user has the permission.
+    """
+    for index in range(0, level_role):
+        role = RolesEnum(index)
+        if role in ctx.message.author.roles:
+            return True
+    await ctx.message.delete()
+    await ctx.send(ctx.message.author.display_name + " non hai i permessi")
+    return False
 
 
 def my_align(word: str, max_length: int, side: str) -> str:

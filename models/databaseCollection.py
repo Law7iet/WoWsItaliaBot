@@ -3,11 +3,17 @@ from enum import Enum
 
 
 class DatabaseCollection(Enum):
-    CONFIG = 1, 'Config'
-    CLANS = 2, 'Clans'
+    CONFIG = 1
+    CLANS = 2
 
     def __index__(self):
-        return self.value[0]
+        return self.value
 
     def __str__(self):
-        return self.value[1]
+        match self.value:
+            case 0:
+                return 'Config'
+            case 1:
+                return 'Clans'
+            case _:
+                return ''

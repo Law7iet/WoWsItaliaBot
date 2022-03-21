@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 from utils.constants import *
 from models.podium import *
+from models.roles import RolesEnum
+from utils.functions import check_role
 
 
 def podio(torneo: TournamentEnum, edizione: int, posizione: int, team: str, immagine: str, partecipanti: tuple[str]):
@@ -45,6 +47,8 @@ class TournamentRanking(commands.Cog):
     @commands.command()
     async def league(self, ctx: commands.context.Context, edizione: str, posizione: str, team: str, immagine: str,
                      *partecipanti: str):
+        if not check_role(ctx, RolesEnum.ADMIN):
+            return
         try:
             if not (edizione.isdigit()) or not (posizione.isdigit()):
                 return
@@ -54,11 +58,14 @@ class TournamentRanking(commands.Cog):
             channel = self.bot.get_channel(CH_TXT_PODIO_LEAGUE) if not DEBUG else self.bot.get_channel(CH_TXT_TESTING)
             await channel.send(embed=embed)
         except Exception as error:
-            print(error)
+            await self.bot.get_channel(CH_TXT_TESTING).send("**>league command exception**")
+            await self.bot.get_channel(CH_TXT_TESTING).send("```" + error + "```")
 
     @commands.command()
     async def cup(self, ctx: commands.context.Context, edizione: str, posizione: str, team: str, immagine: str,
                   *partecipanti: str):
+        if not check_role(ctx, RolesEnum.ADMIN):
+            return
         try:
             if not (edizione.isdigit()) or not (posizione.isdigit()):
                 return
@@ -68,7 +75,8 @@ class TournamentRanking(commands.Cog):
             channel = self.bot.get_channel(CH_TXT_PODIO_CUP) if not DEBUG else self.bot.get_channel(CH_TXT_TESTING)
             await channel.send(embed=embed)
         except Exception as error:
-            print(error)
+            await self.bot.get_channel(CH_TXT_TESTING).send("**>cup command exception**")
+            await self.bot.get_channel(CH_TXT_TESTING).send("```" + error + "```")
 
 
 def setup(bot):

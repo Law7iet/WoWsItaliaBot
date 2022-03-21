@@ -24,6 +24,8 @@ class LeagueTypeEnum(Enum):
                 return 'Burrasca'
             case 4:
                 return 'Temporale'
+            case _:
+                return ''
 
 
 class LeagueColorEnum(Enum):
