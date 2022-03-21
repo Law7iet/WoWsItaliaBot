@@ -4,7 +4,7 @@ from bson import ObjectId
 from pymongo import MongoClient, cursor, results
 
 import config
-from models.databaseCollection import DatabaseCollection
+from models.my_enum.database_collection_enum import DatabaseCollection
 from utils.functions import get_config_id
 
 

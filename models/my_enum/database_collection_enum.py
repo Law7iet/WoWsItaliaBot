@@ -3,8 +3,8 @@ from enum import Enum
 
 
 class DatabaseCollection(Enum):
-    CONFIG = 1
-    CLANS = 2
+    CONFIG = 0
+    CLANS = 1
 
     def __index__(self):
         return self.value

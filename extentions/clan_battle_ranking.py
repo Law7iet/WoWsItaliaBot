@@ -2,10 +2,11 @@ from discord.ext import commands
 
 from api.mongo_db import ApiMongoDB
 from api.wargaming import ApiWargaming
-from models.clan import *
+from models.my_class.clan import Clan
+from models.my_enum.league_type_enum import LeagueTypeEnum, LeagueColorEnum
+from models.my_enum.roles_enum import RolesEnum
 from utils.constants import *
 from utils.functions import my_align, check_role
-from models.roles import RolesEnum
 
 
 class ClanBattleRanking(commands.Cog):
@@ -96,7 +97,7 @@ class ClanBattleRanking(commands.Cog):
 
     @commands.command()
     async def ranking(self, ctx: commands.context.Context):
-        if not check_role(ctx, RolesEnum.ADMIN):
+        if not await check_role(ctx, RolesEnum.ADMIN):
             return
         try:
             x = self.my_rank()

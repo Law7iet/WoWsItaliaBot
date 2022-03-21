@@ -3,13 +3,13 @@ from enum import Enum
 
 
 class RolesEnum(Enum):
-    ADMIN = 0,
-    MODERATOR = 1,
-    ORG_CUP = 2,
-    ORG_LEGUE = 3,
-    REPRESENTATIVE = 4,
-    SAILOR = 5,
-    NOT_AUTH = 6,
+    ADMIN = 0
+    MODERATOR = 1
+    ORG_CUP = 2
+    ORG_LEGUE = 3
+    REPRESENTATIVE = 4
+    SAILOR = 5
+    NOT_AUTH = 6
 
     def __index__(self):
         return self.value
@@ -32,3 +32,6 @@ class RolesEnum(Enum):
                 return str(ROLE_NON_AUTENTICATO)
             case _:
                 return ""
+
+    def __int__(self):
+        return self.value

@@ -1,7 +1,7 @@
 import requests
 from discord.ext.commands.context import Context
 
-from models.roles import RolesEnum
+from models.my_enum.roles_enum import RolesEnum
 from utils.constants import CONFIG_ID
 
 
@@ -26,10 +26,10 @@ def check_data(url: str) -> dict | None:
         return data
 
 
-def check_role(ctx: Context, level_role: RolesEnum) -> bool:
+async def check_role(ctx: Context, level_role: RolesEnum) -> bool:
     """
     Check if the user has the privileges. The user is the author of the message of the context. The privileges are
- based on server's roles. The roles levels are defined by `RolesEnum` class.
+ based on server's roles. The roles levels are defined by `RolesEnum` my_class.
 
     Args:
          ctx: the context.
@@ -38,8 +38,9 @@ def check_role(ctx: Context, level_role: RolesEnum) -> bool:
      Returns:
          a boolean that states if the user has the permission.
     """
-    for index in range(0, level_role):
-        role = RolesEnum(index)
+    for index in range(0, int(level_role) + 1):
+        role_id = str(RolesEnum(index))
+        role = ctx.guild.get_role(int(role_id))
         if role in ctx.message.author.roles:
             return True
     await ctx.message.delete()

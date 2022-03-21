@@ -3,9 +3,9 @@ import re
 from discord.ext import commands
 
 from api.wargaming import ApiWargaming
+from models.my_enum.roles_enum import RolesEnum
 from utils.constants import *
 from utils.functions import my_align, check_role
-from models.roles import RolesEnum
 
 
 class Moderation(commands.Cog):
@@ -15,7 +15,7 @@ class Moderation(commands.Cog):
 
     @commands.command()
     async def write(self, ctx: commands.context.Context, channel_id: str, *, message: str):
-        if not check_role(ctx, RolesEnum.ADMIN):
+        if not await check_role(ctx, RolesEnum.ADMIN):
             return
         try:
             guild = ctx.guild
@@ -30,7 +30,7 @@ class Moderation(commands.Cog):
 
     @commands.command()
     async def edit(self, ctx: commands.context.Context, channel_id: str, message_id: str, *, new_message: str):
-        if not check_role(ctx, RolesEnum.ADMIN):
+        if not await check_role(ctx, RolesEnum.ADMIN):
             return
         try:
             guild = ctx.guild
@@ -45,7 +45,7 @@ class Moderation(commands.Cog):
 
     @commands.command()
     async def nickname(self, ctx: commands.context.Context):
-        if not check_role(ctx, RolesEnum.ADMIN):
+        if not await check_role(ctx, RolesEnum.ADMIN):
             return
         try:
             # Get all the server's members

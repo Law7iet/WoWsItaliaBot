@@ -1,4 +1,3 @@
-# Objects used for the ranking of the clan battle.
 from enum import Enum
 
 
@@ -52,31 +51,3 @@ class LeagueColorEnum(Enum):
                 return ':brown_square:'
             case _:
                 return ''
-
-
-class Clan:
-    def __init__(self, tag: str, squad: str, win_rate: str, battles: int, league: LeagueTypeEnum, division: int,
-                 score: int, promotion: list):
-        self.tag = tag
-        self.squad = squad
-        self.win_rate = win_rate
-        self.battles = battles
-        self.league = league
-        self.division = division
-        self.score = score
-        self.promotion = promotion
-
-    def convert_promo_to_string(self) -> str:
-        """
-        Convert the promo message to a string.
-
-        Returns:
-            `str`: the promo message.
-        """
-        promotion = ''
-        for battle in self.promotion:
-            promotion = promotion + battle + ', '
-        if promotion == '':
-            return promotion
-        else:
-            return '[' + promotion[:-2] + ']'

@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
 from utils.constants import *
-from models.podium import *
-from models.roles import RolesEnum
+from models.my_enum.podium_enum import *
+from models.my_enum.roles_enum import RolesEnum
 from utils.functions import check_role
 
 
@@ -47,7 +47,7 @@ class TournamentRanking(commands.Cog):
     @commands.command()
     async def league(self, ctx: commands.context.Context, edizione: str, posizione: str, team: str, immagine: str,
                      *partecipanti: str):
-        if not check_role(ctx, RolesEnum.ADMIN):
+        if not await check_role(ctx, RolesEnum.ADMIN):
             return
         try:
             if not (edizione.isdigit()) or not (posizione.isdigit()):
@@ -64,7 +64,7 @@ class TournamentRanking(commands.Cog):
     @commands.command()
     async def cup(self, ctx: commands.context.Context, edizione: str, posizione: str, team: str, immagine: str,
                   *partecipanti: str):
-        if not check_role(ctx, RolesEnum.ADMIN):
+        if not await check_role(ctx, RolesEnum.ADMIN):
             return
         try:
             if not (edizione.isdigit()) or not (posizione.isdigit()):
