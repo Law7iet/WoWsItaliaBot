@@ -8,7 +8,7 @@ class LeagueTypeEnum(Enum):
     GALE = 3
     SQUALL = 4
 
-    def __index__(self):
+    def __int__(self):
         return self.value
 
     def __str__(self):
@@ -33,9 +33,6 @@ class LeagueColorEnum(Enum):
     STORM = 2
     GALE = 3
     SQUALL = 4
-
-    def __index__(self):
-        return self.value
 
     def __str__(self):
         match self.value:

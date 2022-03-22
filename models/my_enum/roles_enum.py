@@ -11,9 +11,6 @@ class RolesEnum(Enum):
     SAILOR = 5
     NOT_AUTH = 6
 
-    def __index__(self):
-        return self.value
-
     def __str__(self):
         match self.value:
             case 0:
@@ -31,7 +28,7 @@ class RolesEnum(Enum):
             case 6:
                 return str(ROLE_NON_AUTENTICATO)
             case _:
-                return ""
+                return ''
 
     def __int__(self):
         return self.value

@@ -5,6 +5,7 @@ from api.wargaming import ApiWargaming
 from models.my_class.clan import Clan
 from models.my_enum.league_type_enum import LeagueTypeEnum, LeagueColorEnum
 from models.my_enum.roles_enum import RolesEnum
+from models.my_enum.database_enum import ConfigFileKeys
 from utils.constants import *
 from utils.functions import my_align, check_role
 
@@ -35,7 +36,8 @@ class ClanBattleRanking(commands.Cog):
             data = self.apiWargaming.get_clan_ranking(italian_clan['id'])
 
             for element in data:
-                if str(element['season_number']) == str(self.apiMongo.get_config()['CBCurrentSeason']):
+                if str(element['season_number']) == str(
+                        self.apiMongo.get_config()[str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)]):
                     promotion = []
                     # Compute squad (str)
                     if element['team_number'] == 1:
@@ -43,7 +45,7 @@ class ClanBattleRanking(commands.Cog):
                     elif element['team_number'] == 2:
                         squad = 'B'
                     else:
-                        print("Error - ratings has season_number 12 but team_number isn't equal to 1 or 2")
+                        print('Error - ratings has season_number 12 but team_number isn\'t equal to 1 or 2')
                         continue
                     # Compute tag (str)
                     tag = italian_clan['tag']
@@ -105,7 +107,8 @@ class ClanBattleRanking(commands.Cog):
             league_index = 0
             channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not DEBUG else self.bot.get_channel(
                 CH_TXT_TESTING)
-            message_list = ['**Risultati Clan Battle Season ' + str(self.apiMongo.get_config()['CBCurrentSeason'])
+            message_list = ['**Risultati Clan Battle Season ' + str(
+                self.apiMongo.get_config()[str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)])
                             + '**\n']
             # Add clans in the message
             for league in x:
@@ -144,8 +147,8 @@ class ClanBattleRanking(commands.Cog):
                     if not DEBUG:
                         await sentMessage.publish()
         except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send("**>ranking command exception**")
-            await self.bot.get_channel(CH_TXT_TESTING).send("```" + error + "```")
+            await self.bot.get_channel(CH_TXT_TESTING).send('**>ranking command exception**')
+            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
 
 
 def setup(bot):

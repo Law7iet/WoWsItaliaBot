@@ -4,17 +4,17 @@ from bson import ObjectId
 from pymongo import MongoClient, cursor, results
 
 import config
-from models.my_enum.database_collection_enum import DatabaseCollection
+from models.my_enum.database_enum import DatabaseCollection
 from utils.functions import get_config_id
 
 
 class ApiMongoDB:
     def __init__(self):
-        self.project = "WoWsItaliaBot"
-        self.database_name = "WoWsItaliaBotDB"
+        self.project = 'WoWsItaliaBot'
+        self.database_name = 'WoWsItaliaBotDB'
 
-        self.client = MongoClient("mongodb+srv://" + config.data["MONGO_USER"] + ":" + config.data[
-            "MONGO_PASSWORD"] + "@cluster0.rtvit.mongodb.net/" + self.project + "?retryWrites=true&w=majority")
+        self.client = MongoClient('mongodb+srv://' + config.data['MONGO_USER'] + ':' + config.data[
+            'MONGO_PASSWORD'] + '@cluster0.rtvit.mongodb.net/' + self.project + '?retryWrites=true&w=majority')
 
     # Private API
     # Parametric API to mongo
@@ -31,12 +31,7 @@ class ApiMongoDB:
             the result of the function find_one. If an error occurs, it returns None.
         """
         try:
-            if collection == DatabaseCollection.CONFIG:
-                return self.client[self.database_name][str(DatabaseCollection.CONFIG)].find_one(query)
-            elif collection == DatabaseCollection.CLANS:
-                return self.client[self.database_name][str(DatabaseCollection.CLANS)].find_one(query)
-            else:
-                return None
+            return self.client[self.database_name][str(collection)].find_one(query)
         except Exception as error:
             print(error)
             return None
@@ -54,12 +49,7 @@ class ApiMongoDB:
             `cursor.Cursor` | `None`: the result of the function `find`. If an error occurs, it returns `None`.
         """
         try:
-            if collection == DatabaseCollection.CONFIG:
-                return self.client[self.database_name][str(DatabaseCollection.CONFIG)].find(query)
-            elif collection == DatabaseCollection.CLANS:
-                return self.client[self.database_name][str(DatabaseCollection.CLANS)].find(query)
-            else:
-                return None
+            return self.client[self.database_name][str(collection)].find(query)
         except Exception as error:
             print(error)
             return None
@@ -77,12 +67,7 @@ class ApiMongoDB:
             the result of the function "insert_one". If an error occurs, it returns "None".
         """
         try:
-            if collection == DatabaseCollection.CONFIG:
-                return self.client[self.database_name][str(DatabaseCollection.CONFIG)].insert_one(document)
-            elif collection == DatabaseCollection.CLANS:
-                return self.client[self.database_name][str(DatabaseCollection.CLANS)].insert_one(document)
-            else:
-                return None
+            return self.client[self.database_name][str(collection)].insert_one(document)
         except Exception as error:
             print(error)
             return None
@@ -102,12 +87,7 @@ class ApiMongoDB:
             the result of the function "update_one". If an error occurs, it returns "None".
         """
         try:
-            if collection == DatabaseCollection.CONFIG:
-                return self.client[self.database_name][str(DatabaseCollection.CONFIG)].update_one(query, new_data)
-            elif collection == DatabaseCollection.CLANS:
-                return self.client[self.database_name][str(DatabaseCollection.CLANS)].update_one(query, new_data)
-            else:
-                return None
+            return self.client[self.database_name][str(collection)].update_one(query, new_data)
         except Exception as error:
             print(error)
             return None
@@ -125,12 +105,7 @@ class ApiMongoDB:
             the result of the function "delete_one". If an error occurs, it returns "None".
         """
         try:
-            if collection == DatabaseCollection.CONFIG:
-                return self.client[self.database_name][str(DatabaseCollection.CONFIG)].delete_one(query)
-            elif collection == DatabaseCollection.CLANS:
-                return self.client[self.database_name][str(DatabaseCollection.CLANS)].delete_one(query)
-            else:
-                return None
+            return self.client[self.database_name][str(collection)].delete_one(query)
         except Exception as error:
             print(error)
             return None
@@ -144,7 +119,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__get_element".
         """
-        return self.__get_element(DatabaseCollection.CONFIG, {"_id": ObjectId(get_config_id())})
+        return self.__get_element(DatabaseCollection.CONFIG, {'_id': ObjectId(get_config_id())})
 
     def update_config(self, config_data: dict) -> results.UpdateResult | None:
         """
@@ -157,7 +132,7 @@ class ApiMongoDB:
             the result of the function "__update_element".
         """
         return self.__update_element(
-            DatabaseCollection.CONFIG, {"_id": ObjectId(get_config_id())}, {"$set": config_data})
+            DatabaseCollection.CONFIG, {'_id': ObjectId(get_config_id())}, {'$set': config_data})
 
     # Clans Collection API
     def get_clan_by_id(self, clan_id: str) -> any:
@@ -170,7 +145,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__get_element". If no clan was found, it returns "None".
         """
-        return self.__get_element(DatabaseCollection.CLANS, {"player_id": clan_id})
+        return self.__get_element(DatabaseCollection.CLANS, {'player_id': clan_id})
 
     def get_clans_by_tag(self, clan_tag: str) -> list | None:
         """
@@ -182,7 +157,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__get_elements" cast to a "list". If no clan was found, it returns "None".
         """
-        x = self.__get_elements(DatabaseCollection.CLANS, {"tag": {"$regex": clan_tag, "$options": "i"}})
+        x = self.__get_elements(DatabaseCollection.CLANS, {'tag': {'$regex': clan_tag, '$options': 'i'}})
         if x:
             return list(x)
         else:
@@ -198,7 +173,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__get_elements" cast to a "list". If no clan was found, it returns "None".
         """
-        x = self.__get_elements(DatabaseCollection.CLANS, {"name": {"$regex": clan_name, "$options": "i"}})
+        x = self.__get_elements(DatabaseCollection.CLANS, {'name': {'$regex': clan_name, '$options': 'i'}})
         if x:
             return list(x)
         else:
@@ -215,24 +190,24 @@ class ApiMongoDB:
         Returns:
             the result of the function "__insert_element".
         """
-        if self.get_clan_by_id(str(clan_info["player_id"])) is not None:
+        if self.get_clan_by_id(str(clan_info['player_id'])) is not None:
             # The clan is already stored
             return None
         r1 = None
         r2 = None
         try:
-            r1 = str(clan_info["representations"][0])
-            r2 = str(clan_info["representations"][1])
+            r1 = str(clan_info['representations'][0])
+            r2 = str(clan_info['representations'][1])
         except Exception as error:
             print(error)
             pass
         return self.__insert_element(
             DatabaseCollection.CLANS,
             {
-                "player_id": str(clan_info["player_id"]),
-                "name": str(clan_info["name"]),
-                "tag": str(clan_info["tag"]),
-                "representations": [
+                'player_id': str(clan_info['player_id']),
+                'name': str(clan_info['name']),
+                'tag': str(clan_info['tag']),
+                'representations': [
                     r1,
                     r2
                 ]
@@ -249,7 +224,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__update_element".
         """
-        return self.__update_element(DatabaseCollection.CLANS, {"player_id": clan_id}, clan_data)
+        return self.__update_element(DatabaseCollection.CLANS, {'player_id': clan_id}, clan_data)
 
     def delete_clan(self, clan_id: str) -> results.DeleteResult | None:
         """
@@ -261,4 +236,4 @@ class ApiMongoDB:
         Returns:
             the result of the function "__delete_element".
         """
-        return self.__delete_element(DatabaseCollection.CLANS, {"player_id": clan_id})
+        return self.__delete_element(DatabaseCollection.CLANS, {'player_id': clan_id})

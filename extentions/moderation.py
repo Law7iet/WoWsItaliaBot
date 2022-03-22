@@ -25,8 +25,8 @@ class Moderation(commands.Cog):
                 CH_TXT_TESTING)
             await channel.send(message)
         except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send("**>write command exception**")
-            await self.bot.get_channel(CH_TXT_TESTING).send("```" + error + "```")
+            await self.bot.get_channel(CH_TXT_TESTING).send('**>write command exception**')
+            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
 
     @commands.command()
     async def edit(self, ctx: commands.context.Context, channel_id: str, message_id: str, *, new_message: str):
@@ -40,8 +40,8 @@ class Moderation(commands.Cog):
             message = await channel.fetch_message(int(message_id))
             await message.edit(content=new_message)
         except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send("**>edit command exception**")
-            await self.bot.get_channel(CH_TXT_TESTING).send("```" + error + "```")
+            await self.bot.get_channel(CH_TXT_TESTING).send('**>edit command exception**')
+            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
 
     @commands.command()
     async def nickname(self, ctx: commands.context.Context):
@@ -55,7 +55,7 @@ class Moderation(commands.Cog):
                 try:
                     # Print check
                     # if DEBUG:
-                    #     print(my_align(member.display_name, 35, "left"))
+                    #     print(my_align(member.display_name, 35, 'left'))
 
                     # Skip if member has admin, mod, cc, cm, org tag
                     if guild.get_role(ROLE_ADMIN) in member.roles:
@@ -89,7 +89,7 @@ class Moderation(commands.Cog):
                     if not player_info:
                         # The string "user" isn't an in-game nickname
                         if DEBUG:
-                            print(my_align(member.display_name, 35, "left") + "non è stato trovato")
+                            print(my_align(member.display_name, 35, 'left') + 'non è stato trovato')
                         continue
                     player_id = player_info[0]
                     game_nick = player_info[1]
@@ -109,17 +109,17 @@ class Moderation(commands.Cog):
                     if new_nick is not member.display_name:
                         await member.edit(nick=new_nick)
                         if DEBUG:
-                            print(my_align(member.display_name, 35, "left") + "-> " + new_nick)
+                            print(my_align(member.display_name, 35, 'left') + '-> ' + new_nick)
                 except Exception as error:
                     # Unexpected error during the member iteration
-                    await self.bot.get_channel(CH_TXT_TESTING).send("**>nickname command exception in the iteration**")
-                    await self.bot.get_channel(CH_TXT_TESTING).send("```" + error + "```")
+                    await self.bot.get_channel(CH_TXT_TESTING).send('**>nickname command exception in the iteration**')
+                    await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
                     # Continue the iteration
                     pass
-            await ctx.send("Aggiornamento finito")
+            await ctx.send('Aggiornamento finito')
         except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send("**>nickname command exception**")
-            await self.bot.get_channel(CH_TXT_TESTING).send("```" + error + "```")
+            await self.bot.get_channel(CH_TXT_TESTING).send('**>nickname command exception**')
+            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
 
 
 def setup(bot):

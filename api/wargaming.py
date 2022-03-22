@@ -8,7 +8,7 @@ from utils.functions import *
 
 class ApiWargaming:
     def __init__(self):
-        self.key = data["APPLICATION_ID"]
+        self.key = data['APPLICATION_ID']
         self.url_api_root = 'https://api.worldofwarships.eu/wows/'
         self.url_players = self.url_api_root + 'account/list/?application_id=' + self.key + '&search='
         self.url_player_data = self.url_api_root + 'account/info/?application_id=' + self.key + '&account_id='

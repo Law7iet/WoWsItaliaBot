@@ -25,18 +25,18 @@ def podio(torneo: TournamentEnum, edizione: int, posizione: int, team: str, imma
             classificato = PodiumEnum.OTHER
     color = int(classificato)
     if posizione is not PodiumEnum.OTHER:
-        descrizione = str(classificato) + " classificato dell\'Italian " + str(evento) + " " + str(edizione) + "."
+        descrizione = str(classificato) + ' classificato dell\'Italian ' + str(evento) + ' ' + str(edizione) + '.'
     else:
-        descrizione = "Partecipante dell\'Italian " + str(evento) + str(edizione) + "."
+        descrizione = 'Partecipante dell\'Italian ' + str(evento) + str(edizione) + '.'
     embed = discord.Embed(title=team, description=descrizione, color=discord.Colour(int(color)))
     embed.set_thumbnail(url=immagine)
-    embed.set_footer(text="Congratulazioni!")
+    embed.set_footer(text='Congratulazioni!')
     if partecipanti:
-        giocatori = ""
+        giocatori = ''
         for partecipante in partecipanti:
-            giocatori = giocatori + partecipante.replace(",", "") + ", "
+            giocatori = giocatori + partecipante.replace(',', '') + ', '
         giocatori = giocatori[:-2]
-        embed.add_field(name="Partecipanti:", value=giocatori, inline=True)
+        embed.add_field(name='Partecipanti:', value=giocatori, inline=True)
     return embed
 
 
@@ -58,8 +58,8 @@ class TournamentRanking(commands.Cog):
             channel = self.bot.get_channel(CH_TXT_PODIO_LEAGUE) if not DEBUG else self.bot.get_channel(CH_TXT_TESTING)
             await channel.send(embed=embed)
         except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send("**>league command exception**")
-            await self.bot.get_channel(CH_TXT_TESTING).send("```" + error + "```")
+            await self.bot.get_channel(CH_TXT_TESTING).send('**>league command exception**')
+            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
 
     @commands.command()
     async def cup(self, ctx: commands.context.Context, edizione: str, posizione: str, team: str, immagine: str,
@@ -75,8 +75,8 @@ class TournamentRanking(commands.Cog):
             channel = self.bot.get_channel(CH_TXT_PODIO_CUP) if not DEBUG else self.bot.get_channel(CH_TXT_TESTING)
             await channel.send(embed=embed)
         except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send("**>cup command exception**")
-            await self.bot.get_channel(CH_TXT_TESTING).send("```" + error + "```")
+            await self.bot.get_channel(CH_TXT_TESTING).send('**>cup command exception**')
+            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
 
 
 def setup(bot):

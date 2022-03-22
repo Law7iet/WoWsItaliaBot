@@ -3,18 +3,15 @@ from enum import Enum
 
 
 class TournamentEnum(Enum):
-    LEAGUE = 0, "League"
-    CUP = 1, "Cup"
-
-    def __index__(self):
-        return self.value
+    LEAGUE = 0, 'League'
+    CUP = 1, 'Cup'
 
     def __str__(self):
         match self.value:
             case 0:
-                return "League"
+                return 'League'
             case 1:
-                return "Cup"
+                return 'Cup'
             case _:
                 return ''
 
@@ -24,9 +21,6 @@ class PodiumEnum(Enum):
     FIRST = 1
     SECOND = 2
     THIRD = 3
-
-    def __index__(self):
-        return self.value
 
     def __int__(self):
         match self.value:
