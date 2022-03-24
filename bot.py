@@ -15,7 +15,7 @@ if __name__ == "__main__":
     extensions = ["mod", "mapvote", "nickname", "podio", "ranking", "eventManager"]
     for extension in extensions:
         try:
-            bot.load_extension(extension)
+            await bot.load_extension(extension)
         except Exception as error:
             print("{} cannot be loaded. [{}]".format(extension, error))
 
