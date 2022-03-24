@@ -1,95 +1,82 @@
 # TODO: Refactor
 
-import discord
 import random
 import re
+
+import discord
 from discord.ext import commands
+
+from api.mongo_db import ApiMongoDB
+from models.my_class.pick_and_ban_map_session import PickAndBanMapSession
+from models.my_enum.database_enum import ConfigFileKeys
+from models.my_enum.playoff_format_enum import PlayoffFormatEnum
+from models.my_enum.roles_enum import RolesEnum
 from utils.constants import *
+from utils.functions import check_role, get_maps_reactions, get_spawn_reactions
 
 
-class MapVote(commands.Cog):
+class PickAndBanMap(commands.Cog):
     def __init__(self, bot: commands.bot):
         self.bot = bot
+        self.api_mongo_db = ApiMongoDB()
+        self.api_mongo_db = ApiMongoDB()
 
-    def EMOJI_POOL(self):
-        return [
-            "1️⃣",
-            "2️⃣",
-            "3️⃣",
-            "4️⃣",
-            "5️⃣",
-            "6️⃣",
-            "7️⃣",
-            "8️⃣",
-            "9️⃣",
-            "🅰️",
-            "🅱️"
-        ]
+    def get_available_map(self) -> list[str]:
+        config_file = self.api_mongo_db.get_config()
+        return config_file[str(ConfigFileKeys.MAPS)]
 
-    def MAP_POOL(self):
-        return [
-            "Acque Settentrionali",  #
-            "Catena Montuosa",  #
-            "Gigante Dormiente",  #
-            "Lacrime del Deserto",  #
-            "Mare della Fortuna",  #
-            "Nord",  #
-            "Terra del Fuoco",  #
-            "Via del Guerriero",  #
-            "Zona Calda"  #
-        ]
+    def get_playoff_format(self) -> PlayoffFormatEnum | None:
+        config_file = self.api_mongo_db.get_config()
+        match config_file[str(ConfigFileKeys.PLAYOFF_FORMAT)]:
+            case 'Bo1':
+                return PlayoffFormatEnum.BO1
+            case 'Bo3':
+                return PlayoffFormatEnum.BO3
+            case 'Bo5':
+                return PlayoffFormatEnum.BO5
+            case _:
+                return
 
-    def make_body(self):
-        map_list = self.MAP_POOL()
-        emoji_list = self.EMOJI_POOL()
-        for i in range(0, 9):
-            map_list[i] = emoji_list[i] + " " + map_list[i] + "\n"
-        return map_list
-
-    async def makeMapVote(self, ctx: commands.context.Context, input_A, input_B, matches):
-        try:
-            # Controllo dei permessi
-            admin_role = ctx.guild.get_role(ROLE_ADMIN)
-            org_league_role = ctx.guild.get_role(ROLE_ORG_LEAGUE)
-            org_cup_role = ctx.guild.get_role(ROLE_ORG_CUP)
-            rappr_role = ctx.guild.get_role(ROLE_RAPPRESENTANTE_CLAN)
-            if (admin_role in ctx.author.roles) or (org_league_role in ctx.author.roles) or (
-                    org_cup_role in ctx.author.roles) or (rappr_role in ctx.author.roles):
-                # Controllo degli argomenti
-                rappr_A = ctx.guild.get_member(int(input_A[3:-1]))
-                rappr_B = ctx.guild.get_member(int(input_B[3:-1]))
-                if rappr_A and rappr_B:
-                    # Generazione del messaggio
-                    message = self.make_body()
-                    if matches == 3:
-                        message.insert(0, "Bo3: <@" + str(rappr_A.id) + "> vs <@" + str(rappr_B.id) + ">\n\n")
-                    elif matches == 5:
-                        message.insert(0, "Bo5: <@" + str(rappr_A.id) + "> vs <@" + str(rappr_B.id) + ">\n\n")
-                    message.append("\nTurno di <@" + str(rappr_A.id) + "> - Fase di ban")
-                    descrizione = "".join(message)
-                    # Generazione dell'embed
-                    embed = discord.Embed(title="WoWs Italia - Map Vote", description=descrizione, color=0xff0000)
-                    embed.colour = discord.Colour.from_rgb(255, 255, 255)
-                    # Invio dell'embed
-                    msg = await ctx.send(embed=embed)
-                    # Aggiunta delle reazioni
-                    for i in self.EMOJI_POOL():
-                        await msg.add_reaction(i)
-                else:
-                    await ctx.send("Argomento errato (consiglio: tagga un utente)")
-            else:
-                await ctx.send("Permesso negato")
-        except Exception as error:
-            print(error)
+    @commands.command()
+    # async def map_pick_and_ban(self, ctx: commands.context.Context, input_a: str, input_b: str):
+    async def test(self, ctx: commands.context.Context, input_a: str, input_b: str):
+        # Role check
+        if not await check_role(ctx, RolesEnum.ORG_LEAGUE):
             return
-
-    @commands.command()
-    async def mapvote3(self, ctx: commands.context.Context, input_A, input_B):
-        await self.makeMapVote(ctx, input_A, input_B, 3)
-
-    @commands.command()
-    async def mapvote5(self, ctx: commands.context.Context, input_A, input_B):
-        await self.makeMapVote(ctx, input_A, input_B, 5)
+        # Representations check
+        representant_a = ctx.guild.get_member(int(input_a[3:-1]))
+        representant_b = ctx.guild.get_member(int(input_b[3:-1]))
+        if (not representant_a) or (not representant_b):
+            await ctx.send("Argomento errato (consiglio: tagga un utente)")
+            return
+        # Maps check
+        maps = self.get_available_map()
+        if not maps:
+            await ctx.send("Non ci sono mappe disponibili (consiglio: chiedi agli organizzatori)")
+            return
+        # Playoff type check
+        playoff_format = self.get_playoff_format()
+        match playoff_format:
+            case None:
+                await self.bot.get_channel(CH_TXT_TESTING).send('Formato playoff invalido')
+                return
+            case PlayoffFormatEnum.BO1:
+                await ctx.send('Nella modalità Bo1 non è possibile effettuare il Pick&Ban delle mappe.')
+                return
+            case _:
+                pass
+        # Make a session
+        session = PickAndBanMapSession(str(representant_a.id), str(representant_b.id), maps, playoff_format)
+        # Save session on DB
+        self.api_mongo_db.insert_map_session(session.get_dict(True))
+        # Display the session
+        embed = session.get_embed()
+        msg = await ctx.send(embed=embed)
+        for emoji in get_maps_reactions(len(maps)):
+            await msg.add_reaction(emoji)
+        for emoji in get_spawn_reactions():
+            await msg.add_reaction(emoji)
+        return
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -244,4 +231,4 @@ class MapVote(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(MapVote(bot))
+    bot.add_cog(PickAndBanMap(bot))

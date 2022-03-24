@@ -237,3 +237,59 @@ class ApiMongoDB:
             the result of the function "__delete_element".
         """
         return self.__delete_element(DatabaseCollection.CLANS, {'player_id': clan_id})
+
+    # PickAndBanMap Collection API
+    def get_map_session(self, map_id: str) -> dict | None:
+        """
+        Return the map's pick&ban session by its id.
+
+        Args:
+            map_id: the session id.
+
+        Returns:
+            the session's value. If no session was found, it returns "None".
+        """
+        return self.__get_element(DatabaseCollection.PICKANDBANMAP, {'_id': ObjectId(map_id)})
+
+    def insert_map_session(self, map_session: dict) -> results.InsertOneResult | None:
+        """
+        Insert a map's pick&ban session in the collection.
+
+        Args:
+            map_session: the data of the session. It has a "turn" (int), a "representant_a" (str), a "representant_b"
+             (str), a "banned" (list[str]), a "picked" (list[str]), an "available" (list[str]) and a "playoff_format"
+             (str)
+
+        Returns:
+            the result of the function "__insert_element".
+        """
+        return self.__insert_element(
+            DatabaseCollection.PICKANDBANMAP,
+            map_session
+        )
+
+    def update_map_session(self, map_id: str, map_session: dict) -> results.UpdateResult | None:
+        """
+        Update the map's pick&ban session. The session to update is the session that _id matches with `map_id`.
+
+        Args:
+            map_id: the session id.
+            map_session: the entire session to update.
+
+        Returns:
+            the result of the function "__update_element".
+        """
+        return self.__update_element(DatabaseCollection.PICKANDBANMAP, {'_id': map_id}, map_session)
+
+    def delete_map_session(self, map_id: str) -> results.DeleteResult | None:
+        """
+        Delete a map pick&ban session from the collection. The session to delete is the session that map_id matches with
+         `map_id`.
+
+        Args:
+            map_id: the session id.
+
+        Returns:
+            the result of the function "__delete_element".
+        """
+        return self.__delete_element(DatabaseCollection.PICKANDBANMAP, {'_id': map_id})

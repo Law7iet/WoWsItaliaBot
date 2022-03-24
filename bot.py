@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
-from utils.constants import CH_TXT_LOG_EVENT
+
 import config
+from utils.constants import CH_TXT_LOG_EVENT
 
 if __name__ == "__main__":
 
@@ -12,7 +13,7 @@ if __name__ == "__main__":
     bot = commands.Bot(command_prefix = ">", intents = intents)
     bot.remove_command("help")
 
-    extensions = ["clan_battle_ranking", "event_manager", "mapVote", "moderation", "tournament_ranking",
+    extensions = ["clan_battle_ranking", "event_manager", "pick_and_ban_map", "moderation", "tournament_ranking",
                   "config_settings"]
     for extension in extensions:
         try:

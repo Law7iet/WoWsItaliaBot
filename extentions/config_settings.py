@@ -1,23 +1,23 @@
 from discord.ext import commands
-from models.my_enum.battle_type_enum import BattleTypeEnum
-from api.mongo_db import ApiMongoDB
 
-from utils.constants import CH_TXT_TESTING
-from models.my_enum.roles_enum import RolesEnum
+from api.mongo_db import ApiMongoDB
 from models.my_enum.database_enum import ConfigFileKeys
+from models.my_enum.playoff_format_enum import PlayoffFormatEnum
+from models.my_enum.roles_enum import RolesEnum
+from utils.constants import CH_TXT_TESTING
 from utils.functions import check_role
 
 
 class ConfigSettings(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.apiMongoDB = ApiMongoDB()
+        self.api_mongo_db = ApiMongoDB()
 
     async def getter(self, ctx: commands.context.Context, config_key: ConfigFileKeys):
         if not await check_role(ctx, RolesEnum.SAILOR):
             return
         try:
-            config_file = self.apiMongoDB.get_config()
+            config_file = self.api_mongo_db.get_config()
             return config_file[str(config_key)]
         except Exception as error:
             await self.bot.get_channel(CH_TXT_TESTING).send('**getter of ' + str(config_key)
@@ -53,18 +53,18 @@ class ConfigSettings(commands.Cog):
             return
         try:
             battle_type = battle_type.upper()
-            battle_type = BattleTypeEnum(battle_type)
+            battle_type = PlayoffFormatEnum(battle_type)
             match battle_type:
-                case BattleTypeEnum.BO1:
+                case PlayoffFormatEnum.BO1:
                     value = 'Bo1'
-                case BattleTypeEnum.BO3:
+                case PlayoffFormatEnum.BO3:
                     value = 'Bo3'
-                case BattleTypeEnum.BO5:
+                case PlayoffFormatEnum.BO5:
                     value = 'Bo5'
                 case _:
                     return
             data = {str(ConfigFileKeys.PLAYOFF_FORMAT): value}
-            result = self.apiMongoDB.update_config(data)
+            result = self.api_mongo_db.update_config(data)
             if result.matched_count == 1:
                 await ctx.send('Impostato la modalità: ' + value + '.')
             else:
@@ -82,7 +82,7 @@ class ConfigSettings(commands.Cog):
             if value <= 0:
                 return
             data = {str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON): value}
-            result = self.apiMongoDB.update_config(data)
+            result = self.api_mongo_db.update_config(data)
             if result.matched_count == 1:
                 await ctx.send('Impostato la stagione: ' + str(value) + '.')
             else:
@@ -106,7 +106,7 @@ class ConfigSettings(commands.Cog):
                     value_list.append(y)
                     message = message + '- ' + y + '\n'
             data = {str(ConfigFileKeys.MAPS): value_list}
-            result = self.apiMongoDB.update_config(data)
+            result = self.api_mongo_db.update_config(data)
             if result.matched_count == 1:
                 await ctx.send('Impostato le mappe:\n' + message[:-2])
             else:

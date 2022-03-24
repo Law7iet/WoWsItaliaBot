@@ -1,12 +1,13 @@
-from utils.constants import *
 from enum import Enum
+
+from utils.constants import *
 
 
 class RolesEnum(Enum):
     ADMIN = 0
     MODERATOR = 1
     ORG_CUP = 2
-    ORG_LEGUE = 3
+    ORG_LEAGUE = 3
     REPRESENTATIVE = 4
     SAILOR = 5
     NOT_AUTH = 6

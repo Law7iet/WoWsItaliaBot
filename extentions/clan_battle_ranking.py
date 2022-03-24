@@ -3,9 +3,9 @@ from discord.ext import commands
 from api.mongo_db import ApiMongoDB
 from api.wargaming import ApiWargaming
 from models.my_class.clan import Clan
+from models.my_enum.database_enum import ConfigFileKeys
 from models.my_enum.league_type_enum import LeagueTypeEnum, LeagueColorEnum
 from models.my_enum.roles_enum import RolesEnum
-from models.my_enum.database_enum import ConfigFileKeys
 from utils.constants import *
 from utils.functions import my_align, check_role
 
@@ -16,7 +16,7 @@ class ClanBattleRanking(commands.Cog):
         self.apiMongo = ApiMongoDB()
         self.apiWargaming = ApiWargaming()
 
-    def my_rank(self):
+    def my_rank(self) -> list[list[Clan]]:
         clan_battle_inactive = []
         clan_battle_ranking = [
             # DO-TO: Hurricane has only one division.

@@ -75,3 +75,12 @@ def my_align(word: str, max_length: int, side: str) -> str:
 
 def get_config_id() -> str:
     return CONFIG_ID
+
+
+def get_maps_reactions(size: int):
+    emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
+    return emojis[:size]
+
+
+def get_spawn_reactions():
+    return ["🅰️", "🅱️"]

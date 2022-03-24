@@ -5,6 +5,7 @@ from enum import Enum
 class DatabaseCollection(Enum):
     CONFIG = 'Config'
     CLANS = 'Clans'
+    PICKANDBANMAP = 'PickAndBanMap'
 
     def __str__(self):
         return self.value
