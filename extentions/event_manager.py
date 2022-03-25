@@ -1,6 +1,6 @@
 from discord.ext import commands
 from discord import Message
-from utils.constants import CH_TXT_DEV_BLOG
+from utils.constants import CH_TXT_DEV_BLOG, CH_TXT_CLASSIFICA_CB
 
 
 class EventManager(commands.Cog):
@@ -10,6 +10,8 @@ class EventManager(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: Message):
         if message.author.bot and message.channel.id == CH_TXT_DEV_BLOG:
+            await message.publish()
+        if message.author.bot and message.channel.id == CH_TXT_CLASSIFICA_CB:
             await message.publish()
 
 

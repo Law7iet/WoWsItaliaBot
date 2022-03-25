@@ -135,7 +135,7 @@ class ClanBattleRanking(commands.Cog):
             while len(message_list) != 0:
                 flag = False
                 if len(message_list) > 1:
-                    if len(message_list[0] + message_list[1]) < 1900:
+                    if len(message_list[0] + message_list[1]) < 1999:
                         message_list[0] = message_list[0] + message_list.pop(1)
                     else:
                         flag = True
@@ -143,9 +143,7 @@ class ClanBattleRanking(commands.Cog):
                     flag = True
                 if flag:
                     print(message_list[0] + '\n')
-                    sentMessage = await channel.send(message_list.pop(0))
-                    if not DEBUG:
-                        await sentMessage.publish()
+                    await channel.send(message_list.pop(0))
         except Exception as error:
             await self.bot.get_channel(CH_TXT_TESTING).send('**>ranking command exception**')
             await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
