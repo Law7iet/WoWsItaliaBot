@@ -12,7 +12,7 @@ from models.my_enum.database_enum import ConfigFileKeys
 from models.my_enum.playoff_format_enum import PlayoffFormatEnum
 from models.my_enum.roles_enum import RolesEnum
 from utils.constants import *
-from utils.functions import check_role, get_maps_reactions, get_spawn_reactions
+from utils.functions import check_role, convert_list_of_string_to_lower_or_upper
 
 
 class PickAndBanMap(commands.Cog):
@@ -65,18 +65,31 @@ class PickAndBanMap(commands.Cog):
                 return
             case _:
                 pass
+        # Check if the representatives are not in a map pick&ban session
+        if self.api_mongo_db.get_map_session_by_representatives(str(representant_a.id)):
+            await ctx.send('<@' + str(representant_a.id) + '> è già in una sessione di Pick&Ban delle mappe.')
+            return
+        if self.api_mongo_db.get_map_session_by_representatives(str(representant_b.id)):
+            await ctx.send('<@' + str(representant_b.id) + '> è già in una sessione di Pick&Ban delle mappe.')
+            return
         # Make a session
         session = PickAndBanMapSession(str(representant_a.id), str(representant_b.id), maps, playoff_format)
         # Save session on DB
         self.api_mongo_db.insert_map_session(session.get_dict(True))
         # Display the session
         embed = session.get_embed()
-        msg = await ctx.send(embed=embed)
-        for emoji in get_maps_reactions(len(maps)):
-            await msg.add_reaction(emoji)
-        for emoji in get_spawn_reactions():
-            await msg.add_reaction(emoji)
-        return
+        await ctx.send(embed=embed)
+
+    # @commands.command()
+    # async def pick_map(self, ctx: commands.context.Context, *, picked_map: str):
+    #     session = self.api_mongo_db.get_map_session_by_representatives(str(ctx.author.id))
+    #     if not session:
+    #         await ctx.send('<@' + str(ctx.author.id) + '> non è in una sessione di Pick&Ban delle mappe.')
+    #         return
+    #     # control turn and pick
+    #
+    # @commands.command()
+    # async def ban_map(self):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):

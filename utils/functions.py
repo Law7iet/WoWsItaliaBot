@@ -84,3 +84,13 @@ def get_maps_reactions(size: int):
 
 def get_spawn_reactions():
     return ["🅰️", "🅱️"]
+
+
+def convert_list_of_string_to_lower_or_upper(array: list[str], is_lower: bool) -> list[str]:
+    if is_lower:
+        for index in len(array):
+            array[index] = array[index].lower()
+    else:
+        for index in len(array):
+            array[index] = array[index].upper()
+    return array

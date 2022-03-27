@@ -13,6 +13,10 @@ class EventManager(commands.Cog):
             await message.publish()
         if message.author.bot and message.channel.id == CH_TXT_CLASSIFICA_CB:
             await message.publish()
+        match message.content.split(' ')[0]:
+            case '>pick_map':
+                await message.channel.send("Pong")
+
 
 
 def setup(bot):

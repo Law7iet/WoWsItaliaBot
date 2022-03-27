@@ -46,8 +46,8 @@ class PickAndBanMapSession:
                 return
             case _:
                 pass
-        message.insert(0, str(self.playoff_format) + ": <@" + self.representant_a + "> vs <@" +
-                       self.representant_b + ">\n\n")
+        message.insert(0, 'Id: ' + str(self.__id) + '\n**' + str(self.playoff_format) + ": <@" + self.representant_a
+                       + "> vs <@" + self.representant_b + ">**\n\n")
         # Footer
         message.append("\nTurno di <@" + self.representant_a + "> - Fase di ban")
         # Create the embed

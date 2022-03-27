@@ -239,7 +239,7 @@ class ApiMongoDB:
         return self.__delete_element(DatabaseCollection.CLANS, {'player_id': clan_id})
 
     # PickAndBanMap Collection API
-    def get_map_session(self, map_id: str) -> dict | None:
+    def get_map_session_by_id(self, map_id: str) -> dict | None:
         """
         Return the map's pick&ban session by its id.
 
@@ -250,6 +250,24 @@ class ApiMongoDB:
             the session's value. If no session was found, it returns "None".
         """
         return self.__get_element(DatabaseCollection.PICKANDBANMAP, {'_id': ObjectId(map_id)})
+
+    def get_map_session_by_representatives(self, representative_id: str) -> list[dict]:
+        """
+        Return the map's pick&ban session by the representative's id.
+
+        Args:
+            representative_id: the session id.
+
+        Returns:
+            the list of the sessions where a representant matches with representative_id. If no session was found, it
+             returns an empty list.
+        """
+        return list(self.__get_elements(
+            DatabaseCollection.PICKANDBANMAP,
+            {
+                "$or": [{'representant_a': representative_id}, {'representant_b': representative_id}]
+            }
+        ))
 
     def insert_map_session(self, map_session: dict) -> results.InsertOneResult | None:
         """

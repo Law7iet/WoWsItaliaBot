@@ -1,4 +1,4 @@
-DEBUG = True
+DEBUG = False
 
 # Discord's ID
 CH_TXT_LOG_EVENT = 681962602657873990
