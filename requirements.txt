@@ -1,4 +1,4 @@
-git+https://github.com/Rapptz/discord.py
-requests
-pymongo
+discord
+pymongo~=4.0.2
+requests~=2.27.1
 dnspython

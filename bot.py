@@ -17,7 +17,7 @@ if __name__ == "__main__":
                   "config_settings"]
     for extension in extensions:
         try:
-            bot.load_extension("extentions." + extension)
+            bot.load_extension("extensions." + extension)
         except Exception as error:
             print("{} cannot be loaded. [{}]".format(extension, error))
 

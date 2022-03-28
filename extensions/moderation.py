@@ -1,4 +1,5 @@
 import re
+import discord
 
 from discord.ext import commands
 
@@ -19,10 +20,14 @@ class Moderation(commands.Cog):
             return
         try:
             guild = ctx.guild
-            # Discord 1.7.3
-            # channel = guild.get_channel(int(channel_id)) if not DEBUG else self.bot.get_channel(CH_TXT_ADMIN)
-            channel = guild.get_channel_or_thread(int(channel_id)) if not DEBUG else self.bot.get_channel(
-                CH_TXT_TESTING)
+            if discord.version_info.minor == 2:
+                # Discord >= 2.0.0
+                channel = guild.get_channel_or_thread(int(channel_id)) if not DEBUG else self.bot.get_channel(
+                    CH_TXT_TESTING)
+            else:
+                # Discord < 2.0.0
+                # It should be the 1.7.3
+                channel = guild.get_channel(int(channel_id)) if not DEBUG else self.bot.get_channel(CH_TXT_ADMIN)
             await channel.send(message)
         except Exception as error:
             await self.bot.get_channel(CH_TXT_TESTING).send('**>write command exception**')
@@ -34,9 +39,13 @@ class Moderation(commands.Cog):
             return
         try:
             guild = ctx.guild
-            # Discord 1.7.3
-            # channel = guild.get_channel(int(channel_id))
-            channel = guild.get_channel_or_thread(int(channel_id))
+            if discord.version_info.minor == 2:
+                # Discord >= 2.0.0
+                channel = guild.get_channel_or_thread(int(channel_id))
+            else:
+                # Discord < 2.0.0
+                # It should be the 1.7.3
+                channel = guild.get_channel(int(channel_id))
             message = await channel.fetch_message(int(message_id))
             await message.edit(content=new_message)
         except Exception as error:
