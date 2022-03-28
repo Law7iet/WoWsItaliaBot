@@ -27,3 +27,12 @@ ROLE_BOT = 439020331039064064
 ROLE_WOWS_ITALIA = 780427147658919946
 
 CONFIG_ID = "6207aa3f69eca41f0736e279"
+
+EXTENSIONS = [
+    "clan_battle_ranking",
+    "event_manager",
+    "pick_and_ban_map",
+    "moderation",
+    "tournament_ranking",
+    "config_settings"
+]

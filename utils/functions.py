@@ -1,5 +1,6 @@
 import requests
 from discord.ext.commands.context import Context
+from discord.ext import commands
 
 from models.my_enum.roles_enum import RolesEnum
 from utils.constants import CONFIG_ID

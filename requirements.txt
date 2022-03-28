@@ -1,4 +1,4 @@
-discord.py
+discord
 pymongo~=4.0.2
 requests~=2.27.1
 dnspython
