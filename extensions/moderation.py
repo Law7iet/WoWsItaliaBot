@@ -1,6 +1,6 @@
 import re
-import discord
 
+import discord
 from discord.ext import commands
 
 from api.wargaming import ApiWargaming
@@ -63,9 +63,8 @@ class Moderation(commands.Cog):
             for member in members:
                 try:
                     # Print check
-                    # if DEBUG:
-                    #     print(my_align(member.display_name, 35, 'left'))
-
+                    if DEBUG:
+                        print(my_align(member.display_name, 35, 'left'))
                     # Skip if member has admin, mod, cc, cm, org tag
                     if guild.get_role(ROLE_ADMIN) in member.roles:
                         continue
@@ -105,10 +104,10 @@ class Moderation(commands.Cog):
                     # Select user's nickname
                     new_nick = game_nick
                     # Check if user is in a clan
-                    clan_id = self.wargamingApi.get_clan_by_player_id(player_id)
-                    if clan_id:
+                    clan_id = self.wargamingApi.get_clan_by_player_id(str(player_id))
+                    if clan_id and clan_id[0]:
                         # The user has a clan. Add his clan's tag
-                        clanInfo = self.wargamingApi.get_clan_name_by_id(clan_id[0])
+                        clanInfo = self.wargamingApi.get_clan_name_by_id(str(clan_id[0]))
                         new_nick = '[' + clanInfo[1] + '] ' + game_nick
                     # Check if the user has a name. If it's true restore the name if is shorter than 32
                     if name is not None and len(new_nick + ' (' + name + ')') <= 32:

@@ -35,7 +35,7 @@ class ApiWargaming:
             # api call
             return json.loads((requests.get(url=url)).text)['clanview']['wows_ladder']['ratings']
         except Exception as error:
-            print(error)
+            print("ApiWargaming.get_clan_ranking\n" + str(error))
             return []
 
     def get_player_by_nick(self, nickname: str) -> tuple | None:
@@ -55,7 +55,7 @@ class ApiWargaming:
         try:
             return response['data'][0]['account_id'], response['data'][0]['nickname']
         except Exception as error:
-            print(error)
+            print("ApiWargaming.get_player_by_nick\n" + str(error))
             return None
 
     def get_player_by_id(self, player_id: str) -> tuple | None:
@@ -75,7 +75,7 @@ class ApiWargaming:
         try:
             return response['data'][player_id]['account_id'], response['data'][player_id]['nickname']
         except Exception as error:
-            print(error)
+            print("ApiWargaming.get_player_by_id\n" + str(error))
             return None
 
     def get_clan_by_player_id(self, player_id: str) -> tuple | None:
@@ -91,9 +91,9 @@ class ApiWargaming:
         url = self.url_player_clan_data + player_id
         response = check_data(url)
         try:
-            return tuple(response['data'][player_id]['clan_id'])
+            return response['data'][player_id]['clan_id'],
         except Exception as error:
-            print(error)
+            print("ApiWargaming.get_clan_by_player_by_id\n" + str(error))
             return None
 
     def get_clan_name_by_id(self, clan_id: str) -> tuple | None:
@@ -111,5 +111,5 @@ class ApiWargaming:
         try:
             return response['data'][clan_id]['name'], response['data'][clan_id]['tag']
         except Exception as error:
-            print(error)
+            print("ApiWargaming.get_clan_name_by_id\n" + str(error))
             return None
