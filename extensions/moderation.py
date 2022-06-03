@@ -116,6 +116,9 @@ class Moderation(commands.Cog):
                     # Change nickname if the original nickname was changed
                     if new_nick is not member.display_name:
                         await member.edit(nick=new_nick)
+                        representation = guild.get_role(ROLE_RAPPRESENTANTE_CLAN)
+                        if representation in member.roles:
+                            await member.remove_roles(representation)
                         if DEBUG:
                             print(my_align(member.display_name, 35, 'left') + '-> ' + new_nick)
                 except Exception as error:

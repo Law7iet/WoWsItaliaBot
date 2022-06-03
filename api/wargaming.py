@@ -15,7 +15,7 @@ class ApiWargaming:
         self.url_clans = self.url_api_root + 'clans/list/?application_id=' + self.key + '&search='
         self.url_clan_details = self.url_api_root + 'clans/info/?application_id=' + self.key + '&clan_id='
         self.url_player_clan_data = self.url_api_root + 'clans/accountinfo/?application_id=' + self.key + '&account_id='
-        self.ur_clan_ranking = 'https://clans.worldofwarships.eu/api/clanbase/'
+        self.url_clan_ranking = 'https://clans.worldofwarships.eu/api/clanbase/'
 
     def get_clan_ranking(self, clan_id: str) -> list:
         """
@@ -30,7 +30,7 @@ class ApiWargaming:
         Returns:
             the list of ratings.
         """
-        url = self.ur_clan_ranking + clan_id + '/claninfo/'
+        url = self.url_clan_ranking + clan_id + '/claninfo/'
         try:
             # api call
             return json.loads((requests.get(url=url)).text)['clanview']['wows_ladder']['ratings']

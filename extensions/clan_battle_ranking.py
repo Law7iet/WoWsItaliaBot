@@ -1,3 +1,5 @@
+import time
+
 from discord.ext import commands
 
 from api.mongo_db import ApiMongoDB
@@ -98,7 +100,7 @@ class ClanBattleRanking(commands.Cog):
         return clan_battle_ranking
 
     @commands.command()
-    async def ranking(self, ctx: commands.context.Context):
+    async def cb(self, ctx: commands.context.Context):
         if not await check_role(ctx, RolesEnum.ADMIN):
             return
         try:
@@ -107,9 +109,7 @@ class ClanBattleRanking(commands.Cog):
             league_index = 0
             channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not DEBUG else self.bot.get_channel(
                 CH_TXT_TESTING)
-            message_list = ['**Risultati Clan Battle Season ' + str(
-                self.apiMongo.get_config()[str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)])
-                            + '**\n']
+            message_list = []
             # Add clans in the message
             for league in x:
                 division_index = 1
@@ -132,6 +132,11 @@ class ClanBattleRanking(commands.Cog):
                     division_index = division_index + 1
                 league_index = league_index + 1
             # Send and publish the message
+            msg = await channel.send('**Risultati Clan Battle Season '
+                                     + str(self.apiMongo.get_config()[str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)])
+                                     + '**\n')
+            await msg.publish()
+            time.sleep(10)
             while len(message_list) != 0:
                 flag = False
                 if len(message_list) > 1:
@@ -143,7 +148,9 @@ class ClanBattleRanking(commands.Cog):
                     flag = True
                 if flag:
                     print(message_list[0] + '\n')
-                    await channel.send(message_list.pop(0))
+                    msg = await channel.send(message_list.pop(0))
+                    await msg.publish()
+                    time.sleep(10)
         except Exception as error:
             await self.bot.get_channel(CH_TXT_TESTING).send('**>ranking command exception**')
             await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
