@@ -37,9 +37,48 @@ class PickAndBanMap(commands.Cog):
             case _:
                 return
 
+    def map_check(self, maps: list[str], voted_map: str) -> int:
+        x = voted_map.lower()
+        for index in range(0, len(maps)):
+            maps[index] = maps[index].lower()
+        if x in maps:
+            return maps.index(x)
+        else:
+            return -1
+
+    # def bo3_pick_and_ban(self, session: dict, user: str, voted_map: str):
+    #     #   - BO3    - BO5
+    #     # 0 - ban A  - ban A
+    #     # 1 - ban B  - ban B
+    #     # 2 - pick A - pick A
+    #     # 3 - pick B - pick B
+    #     # 4 -        - pick A
+    #     # 5 -        - pick B
+    #     if session['turn'] % 0:
+    #         if session['representative_a'] == user:
+    #             # Turno di A
+    #             index = self.map_check(session['available'], voted_map)
+    #         else:
+    #             return
+    #     else:
+    #         if session['representative_b'] == user:
+    #             # Turno di B
+    #             index = self.map_check(session['available'], voted_map)
+    #         else:
+    #             return
+    #     if index == -1:
+    #         return
+    #     match session['turn']:
+    #         case 0:
+    #             session['available'][index]:
+    #         case 1:
+    #
+    #         case 2:
+    #
+    #         case 3:
+
     @commands.command()
-    # async def map_pick_and_ban(self, ctx: commands.context.Context, input_a: str, input_b: str):
-    async def test(self, ctx: commands.context.Context, input_a: str, input_b: str):
+    async def start_map_session(self, ctx: commands.context.Context, input_a: str, input_b: str):
         # Role check
         if not await check_role(ctx, RolesEnum.ORG_LEAGUE):
             return
@@ -80,14 +119,34 @@ class PickAndBanMap(commands.Cog):
         embed = session.get_embed()
         await ctx.send(embed=embed)
 
-    # @commands.command()
-    # async def pick_map(self, ctx: commands.context.Context, *, picked_map: str):
-    #     session = self.api_mongo_db.get_map_session_by_representatives(str(ctx.author.id))
-    #     if not session:
-    #         await ctx.send('<@' + str(ctx.author.id) + '> non è in una sessione di Pick&Ban delle mappe.')
-    #         return
-    #     # control turn and pick
-    #
+    @commands.command()
+    async def end_map_session(self, ctx: commands.context.Context, user: str):
+        # Role check
+        if not await check_role(ctx, RolesEnum.ORG_LEAGUE):
+            return
+        representant = ctx.guild.get_member(int(user[3:-1]))
+        if not representant:
+            await ctx.send("Argomento errato (consiglio: tagga un utente)")
+            return
+        sessions = self.api_mongo_db.get_map_session_by_representatives(str(representant.id))
+        for session in sessions:
+            self.api_mongo_db.delete_map_session(session['_id'])
+            await ctx.send("Rimosso la sessione " + str(session['_id']) + " con rappresentanti "
+                           + "<@" + session["representant_a"] + "> e <@" + session["representant_b"] + ">")
+
+    @commands.command()
+    async def pick_map(self, ctx: commands.context.Context, *, picked_map: str):
+        session = self.api_mongo_db.get_map_session_by_representatives(str(ctx.author.id))
+        if not session:
+            await ctx.send('<@' + str(ctx.author.id) + '> non è in una sessione di Pick&Ban delle mappe.')
+            return
+        # Control turn and pick
+        match session["playoff_format"]:
+            case "Bo3":
+                self.bo3_pick_and_ban(session, str(ctx.author.id), map)
+            case "Bo5":
+                self.bo5_pick_and_ban(session, str(ctx.author.id), map)
+
     # @commands.command()
     # async def ban_map(self):
 
@@ -241,6 +300,7 @@ class PickAndBanMap(commands.Cog):
         # except Exception as error:
         #     print(error)
         return
+
 
 
 def setup(bot):
