@@ -1,6 +1,7 @@
+import datetime
+
 import requests
 from discord.ext.commands.context import Context
-from discord.ext import commands
 
 from models.my_enum.roles_enum import RolesEnum
 from utils.constants import CONFIG_ID
@@ -95,3 +96,12 @@ def convert_list_of_string_to_lower_or_upper(array: list[str], is_lower: bool) -
         for index in len(array):
             array[index] = array[index].upper()
     return array
+
+
+def nearest(items: any, pivot: any) -> any:
+    return min(items, key=lambda x: abs(x - pivot))
+
+
+def convert_string_to_date(string: str) -> datetime.datetime:
+    x = string.split('-')
+    return datetime.datetime(int(x[0]), int(x[1]), int(x[2]))

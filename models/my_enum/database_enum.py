@@ -14,6 +14,8 @@ class DatabaseCollection(Enum):
 class ConfigFileKeys(Enum):
     BANNED_SHIPS = 'banned_ships'
     CLAN_BATTLE_CURRENT_SEASON = 'clan_battle_current_season'
+    CLAN_BATTLE_STARTING_DAY = 'start_date'
+    CLAN_BATTLE_FINAL_DAY = 'end_date'
     MAPS = 'maps'
     PLAYOFF_FORMAT = 'playoff_format'
 

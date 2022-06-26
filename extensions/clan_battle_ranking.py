@@ -1,5 +1,7 @@
+import datetime
 import time
 
+import pandas
 from discord.ext import commands
 
 from api.mongo_db import ApiMongoDB
@@ -9,7 +11,7 @@ from models.my_enum.database_enum import ConfigFileKeys
 from models.my_enum.league_type_enum import LeagueTypeEnum, LeagueColorEnum
 from models.my_enum.roles_enum import RolesEnum
 from utils.constants import *
-from utils.functions import my_align, check_role
+from utils.functions import my_align, check_role, convert_string_to_date, nearest
 
 
 class ClanBattleRanking(commands.Cog):
@@ -110,6 +112,27 @@ class ClanBattleRanking(commands.Cog):
             channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not DEBUG else self.bot.get_channel(
                 CH_TXT_TESTING)
             message_list = []
+
+            # Compute the progressive day of CB
+            tmp_config = self.apiMongo.get_config()
+            start = convert_string_to_date(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_STARTING_DAY)])
+            end = convert_string_to_date(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_FINAL_DAY)])
+            now = datetime.datetime.now()
+
+            days_range = pandas.date_range(start, end, freq='W-WED')
+            days_range = days_range.union(pandas.date_range(start, end, freq='W-THU'))
+            days_range = days_range.union(pandas.date_range(start, end, freq='W-SAT'))
+            days_range = days_range.union(pandas.date_range(start, end, freq='W-SUN'))
+
+            day = nearest(days_range, now)
+            index = days_range.get_loc(day) + 1
+
+            title = '**Risultati Clan Battle Season ' \
+                    + str(self.apiMongo.get_config()[str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)]) \
+                    + '**\n Giornata ' + str(index) + ' di ' + str(len(days_range) + '\n')
+
+            message_list.append(title)
+
             # Add clans in the message
             for league in x:
                 division_index = 1
@@ -132,11 +155,6 @@ class ClanBattleRanking(commands.Cog):
                     division_index = division_index + 1
                 league_index = league_index + 1
             # Send and publish the message
-            msg = await channel.send('**Risultati Clan Battle Season '
-                                     + str(self.apiMongo.get_config()[str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)])
-                                     + '**\n')
-            await msg.publish()
-            time.sleep(10)
             while len(message_list) != 0:
                 flag = False
                 if len(message_list) > 1:
