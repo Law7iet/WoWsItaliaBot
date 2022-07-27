@@ -1,3 +1,5 @@
+import datetime
+
 from discord.ext import commands
 
 from api.mongo_db import ApiMongoDB
@@ -114,6 +116,23 @@ class ConfigSettings(commands.Cog):
         except Exception as error:
             await self.bot.get_channel(CH_TXT_TESTING).send('**>set_maps command exception**')
             await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
+
+    @commands.command()
+    async def set_cb_days(self, ctx: commands.context.Context, start: str, end: str):
+        if not await check_role(ctx, RolesEnum.ADMIN):
+            return
+        start = start.split('-')
+        end = end.split('-')
+        try:
+            # Check integrity
+            start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]))
+            end = datetime.datetime(int(end[0]), int(end[1]), int(end[2]))
+            data1 = {str(ConfigFileKeys.CLAN_BATTLE_STARTING_DAY): start.strftime('%Y-%m-%d')}
+            data2 = {str(ConfigFileKeys.CLAN_BATTLE_FINAL_DAY): end.strftime('%Y-%m-%d')}
+            result = self.api_mongo_db.update_config(data1)
+            result = self.api_mongo_db.update_config(data2)
+        except:
+            await ctx.send("Errore. sintassi: AAAA-MM-GG AAAA-MM-GG")
 
 
 def setup(bot):

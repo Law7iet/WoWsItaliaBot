@@ -31,6 +31,10 @@ if __name__ == "__main__":
             return
 
     @bot.command()
+    async def ping(ctx):
+        await ctx.send("Pong")
+
+    @bot.command()
     async def help(ctx):
         try:
             embed = discord.Embed()

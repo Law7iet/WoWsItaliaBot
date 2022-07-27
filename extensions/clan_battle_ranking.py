@@ -117,20 +117,26 @@ class ClanBattleRanking(commands.Cog):
             tmp_config = self.apiMongo.get_config()
             start = convert_string_to_date(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_STARTING_DAY)])
             end = convert_string_to_date(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_FINAL_DAY)])
-            now = datetime.datetime.now()
+            today = datetime.datetime.now()
 
             days_range = pandas.date_range(start, end, freq='W-WED')
             days_range = days_range.union(pandas.date_range(start, end, freq='W-THU'))
             days_range = days_range.union(pandas.date_range(start, end, freq='W-SAT'))
             days_range = days_range.union(pandas.date_range(start, end, freq='W-SUN'))
 
-            day = nearest(days_range, now)
+            day = nearest(days_range, today)
             index = days_range.get_loc(day) + 1
 
-            title = '**Risultati Clan Battle Season ' \
-                    + str(self.apiMongo.get_config()[str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)]) \
-                    + '**\n Giornata ' + str(index) + ' di ' + str(len(days_range) + '\n')
+            day_message = '**\n Giornata ' + str(index) + ' di ' + str(len(days_range)) + '**\n'
+            if today < start:
+                await ctx.send("La data odierna (" + today.strftime("%d/%m/%Y") + ") è minore della data di inizio (" + start.strftime("%d/%m/%Y") + ")")
+                day_message = '\n'
+            if today > end:
+                await ctx.send("La data odierna (" + today.strftime("%d/%m/%Y") + ") è maggiore della data di fine (" + end.strftime("%d/%m/%Y") + ")")
+                day_message = '\n'
 
+            title = '**Risultati Clan Battle Season ' \
+                    + str(self.apiMongo.get_config()[str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)]) + day_message + '**'
             message_list.append(title)
 
             # Add clans in the message
