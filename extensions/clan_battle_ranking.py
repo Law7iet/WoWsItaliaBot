@@ -102,17 +102,13 @@ class ClanBattleRanking(commands.Cog):
         return clan_battle_ranking
 
     @commands.command()
-    async def cb(self, ctx: commands.context.Context, isTesting: str):
-        if not await check_role(ctx, RolesEnum.ADMIN):
-            return
+    async def cb(self, ctx: commands.context.Context, isTesting: str = ""):
         try:
             x = self.my_rank()
             pos = 1
             league_index = 0
-            channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not DEBUG else self.bot.get_channel(
-                CH_TXT_TESTING)
-            channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not (isTesting == "test") else self.bot.get_channel(
-                CH_TXT_TESTING)
+            channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not isTesting and not DEBUG else self.bot.\
+                get_channel(CH_TXT_TESTING)
             message_list = []
 
             # Compute the progressive day of CB
@@ -120,19 +116,15 @@ class ClanBattleRanking(commands.Cog):
             start = convert_string_to_date(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_STARTING_DAY)])
             end = convert_string_to_date(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_FINAL_DAY)])
             today = (datetime.datetime.now() + datetime.timedelta(days=1)).date()
-
             totalCount = 0
             index = 0
 
             for d_ord in range(start.toordinal(), end.toordinal()):
                 d = datetime.date.fromordinal(d_ord)
-                if (d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6):
+                if d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6:
                     totalCount += 1
-
-            for d_ord in range(start.toordinal(), today.toordinal()):
-                d = datetime.date.fromordinal(d_ord)
-                if (d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6):
-                    index += 1
+                    if d < today:
+                        index += 1
 
             day_message = '**\n Giornata ' + str(index) + ' di ' + str(totalCount) + '**\n'
             if today < start:
