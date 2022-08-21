@@ -102,7 +102,7 @@ class ClanBattleRanking(commands.Cog):
         return clan_battle_ranking
 
     @commands.command()
-    async def cb(self, ctx: commands.context.Context):
+    async def cb(self, ctx: commands.context.Context, isTesting: str):
         if not await check_role(ctx, RolesEnum.ADMIN):
             return
         try:
@@ -110,6 +110,8 @@ class ClanBattleRanking(commands.Cog):
             pos = 1
             league_index = 0
             channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not DEBUG else self.bot.get_channel(
+                CH_TXT_TESTING)
+            channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not (isTesting == "test") else self.bot.get_channel(
                 CH_TXT_TESTING)
             message_list = []
 
