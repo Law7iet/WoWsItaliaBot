@@ -117,17 +117,22 @@ class ClanBattleRanking(commands.Cog):
             tmp_config = self.apiMongo.get_config()
             start = convert_string_to_date(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_STARTING_DAY)])
             end = convert_string_to_date(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_FINAL_DAY)])
-            today = datetime.datetime.now()
+            today = (datetime.datetime.now() + datetime.timedelta(days=1)).date()
 
-            days_range = pandas.date_range(start, end, freq='W-WED')
-            days_range = days_range.union(pandas.date_range(start, end, freq='W-THU'))
-            days_range = days_range.union(pandas.date_range(start, end, freq='W-SAT'))
-            days_range = days_range.union(pandas.date_range(start, end, freq='W-SUN'))
+            totalCount = 0
+            index = 0
 
-            day = nearest(days_range, today)
-            index = days_range.get_loc(day) + 1
+            for d_ord in range(start.toordinal(), end.toordinal()):
+                d = datetime.date.fromordinal(d_ord)
+                if (d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6):
+                    totalCount += 1
 
-            day_message = '**\n Giornata ' + str(index) + ' di ' + str(len(days_range)) + '**\n'
+            for d_ord in range(start.toordinal(), today.toordinal()):
+                d = datetime.date.fromordinal(d_ord)
+                if (d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6):
+                    daysPassed += 1
+
+            day_message = '**\n Giornata ' + str(index) + ' di ' + str(totalCount) + '**\n'
             if today < start:
                 await ctx.send("La data odierna (" + today.strftime("%d/%m/%Y") + ") è minore della data di inizio (" + start.strftime("%d/%m/%Y") + ")")
                 day_message = '\n'
