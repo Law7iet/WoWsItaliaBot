@@ -132,7 +132,7 @@ class ClanBattleRanking(commands.Cog):
             for d_ord in range(start.toordinal(), today.toordinal()):
                 d = datetime.date.fromordinal(d_ord)
                 if (d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6):
-                    daysPassed += 1
+                    index += 1
 
             day_message = '**\n Giornata ' + str(index) + ' di ' + str(totalCount) + '**\n'
             if today < start:
