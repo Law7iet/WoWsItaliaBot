@@ -127,10 +127,10 @@ class ClanBattleRanking(commands.Cog):
                         index += 1
 
             day_message = '**\n Giornata ' + str(index) + ' di ' + str(totalCount) + '**\n'
-            if today < start:
+            if today < start.date():
                 await ctx.send("La data odierna (" + today.strftime("%d/%m/%Y") + ") è minore della data di inizio (" + start.strftime("%d/%m/%Y") + ")")
                 day_message = '\n'
-            if today > end:
+            if today > end.date():
                 await ctx.send("La data odierna (" + today.strftime("%d/%m/%Y") + ") è maggiore della data di fine (" + end.strftime("%d/%m/%Y") + ")")
                 day_message = '\n'
 
