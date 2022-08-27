@@ -102,6 +102,6 @@ def nearest(items: any, pivot: any) -> any:
     return min(items, key=lambda x: abs(x - pivot))
 
 
-def convert_string_to_date(string: str) -> datetime.datetime:
+def convert_string_to_datetime(string: str) -> datetime.datetime:
     x = string.split('-')
     return datetime.datetime(int(x[0]), int(x[1]), int(x[2]))

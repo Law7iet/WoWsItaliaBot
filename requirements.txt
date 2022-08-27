@@ -1,6 +1,6 @@
-discord~=1.7.3
 pymongo~=4.0.2
 requests~=2.27.1
 dnspython
 
 pandas~=1.4.3
+disnake~=2.5.2

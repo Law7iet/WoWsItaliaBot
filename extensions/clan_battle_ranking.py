@@ -1,17 +1,22 @@
+import asyncio
 import datetime
 import time
 
-import pandas
-from discord.ext import commands
+from disnake import ApplicationCommandInteraction
+from disnake.ext import commands
 
 from api.mongo_db import ApiMongoDB
 from api.wargaming import ApiWargaming
 from models.my_class.clan import Clan
 from models.my_enum.database_enum import ConfigFileKeys
 from models.my_enum.league_type_enum import LeagueTypeEnum, LeagueColorEnum
-from models.my_enum.roles_enum import RolesEnum
 from utils.constants import *
-from utils.functions import my_align, check_role, convert_string_to_date, nearest
+from utils.functions import my_align, check_role, convert_string_to_datetime, nearest
+
+MessageOptions = commands.option_enum({
+    "Pubblic": "Pubblico",
+    "Testing": "Testing"
+})
 
 
 class ClanBattleRanking(commands.Cog):
@@ -21,41 +26,32 @@ class ClanBattleRanking(commands.Cog):
         self.apiWargaming = ApiWargaming()
 
     def my_rank(self) -> list[list[Clan]]:
-        clan_battle_inactive = []
-        clan_battle_ranking = [
-            # DO-TO: Hurricane has only one division.
-            # Hurricane - Division 1, 2, 3
-            [[], [], []],
-            # Typhoon - Division 1, 2, 3
-            [[], [], []],
-            # Storm - Division 1, 2, 3
-            [[], [], []],
-            # Gale - Division 1, 2, 3
-            [[], [], []],
-            # Squall - Division 1, 2, 3
-            [[], [], []]
-        ]
+        # Each element represent a league.
+        # The leagues are Hurricane, Typhoon, Storm, Gale and Squall
+        # Each league has 3 divisions
+        # DO-TO: Hurricane has only one division.
+        clan_battle_ranking = [[[], [], []], [[], [], []], [[], [], []], [[], [], []], [[], [], []]]
 
         for italian_clan in self.apiMongo.get_clans_by_name(''):
             data = self.apiWargaming.get_clan_ranking(italian_clan['id'])
 
             for element in data:
-                if str(element['season_number']) == str(
-                        self.apiMongo.get_config()[str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)]):
+                if str(element['season_number']) == str(self.apiMongo.get_config()[str(
+                        ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON
+                )]):
                     promotion = []
                     # Compute squad (str)
-                    if element['team_number'] == 1:
-                        squad = 'A'
-                    elif element['team_number'] == 2:
-                        squad = 'B'
-                    else:
-                        print('Error - ratings has season_number 12 but team_number isn\'t equal to 1 or 2')
-                        continue
+                    match element['team_number']:
+                        case 1:
+                            squad = 'A'
+                        case 2:
+                            squad = 'B'
+                        case _:
+                            continue
                     # Compute tag (str)
                     tag = italian_clan['tag']
                     # Check if a clan is inactive in the clan battles
                     if element['battles_count'] == 0:
-                        clan_battle_inactive.append(tag)
                         continue
                     # Compute win_rate (str)
                     win_rate = '%.2f' % (element['wins_count'] / element['battles_count'] * 100) + '%'
@@ -83,10 +79,14 @@ class ClanBattleRanking(commands.Cog):
                     if element['stage']:
                         progress = element['stage']['progress']
                         for promoBattle in progress:
-                            if promoBattle == 'victory':
-                                promotion.append('+')
-                            elif promoBattle == 'defeat':
-                                promotion.append('-')
+                            match promoBattle:
+                                case 'victory':
+                                    promotion.append('+')
+                                case 'defeat':
+                                    promotion.append('-')
+                                case _:
+                                    continue
+
                     # Create a Clan instance
                     clan = Clan(tag, squad, win_rate, battles, league, division, score, promotion)
                     # Insert the clan to the correct league and division
@@ -101,20 +101,28 @@ class ClanBattleRanking(commands.Cog):
 
         return clan_battle_ranking
 
-    @commands.command()
-    async def cb(self, ctx: commands.context.Context, isTesting: str = ""):
+    @commands.slash_command(
+        name="classifica",
+        description="Genera la classifica delle Clan Battle."
+    )
+    async def classifica(
+            self,
+            inter: ApplicationCommandInteraction,
+            is_testing: str = ""
+    ):
         try:
+            await inter.response.defer()
             x = self.my_rank()
             pos = 1
             league_index = 0
-            channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not isTesting and not DEBUG else self.bot.\
+            channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB) if not is_testing and not DEBUG else self.bot. \
                 get_channel(CH_TXT_TESTING)
             message_list = []
 
             # Compute the progressive day of CB
             tmp_config = self.apiMongo.get_config()
-            start = convert_string_to_date(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_STARTING_DAY)])
-            end = convert_string_to_date(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_FINAL_DAY)])
+            start = convert_string_to_datetime(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_STARTING_DAY)])
+            end = convert_string_to_datetime(tmp_config[str(ConfigFileKeys.CLAN_BATTLE_FINAL_DAY)])
             today = (datetime.datetime.now() + datetime.timedelta(days=1)).date()
             totalCount = 0
             index = 0
@@ -128,14 +136,17 @@ class ClanBattleRanking(commands.Cog):
 
             day_message = '**\n Giornata ' + str(index) + ' di ' + str(totalCount) + '**\n'
             if today < start.date():
-                await ctx.send("La data odierna (" + today.strftime("%d/%m/%Y") + ") è minore della data di inizio (" + start.strftime("%d/%m/%Y") + ")")
+                await inter.send("La data odierna (" + today.strftime(
+                    "%d/%m/%Y") + ") è minore della data di inizio (" + start.strftime("%d/%m/%Y") + ")")
                 day_message = '\n'
             if today > end.date():
-                await ctx.send("La data odierna (" + today.strftime("%d/%m/%Y") + ") è maggiore della data di fine (" + end.strftime("%d/%m/%Y") + ")")
+                await inter.send("La data odierna (" + today.strftime(
+                    "%d/%m/%Y") + ") è maggiore della data di fine (" + end.strftime("%d/%m/%Y") + ")")
                 day_message = '\n'
 
             title = '**Risultati Clan Battle Season ' \
-                    + str(self.apiMongo.get_config()[str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)]) + day_message + '**'
+                    + str(
+                self.apiMongo.get_config()[str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)]) + day_message + '**'
             message_list.append(title)
 
             # Add clans in the message
@@ -174,9 +185,18 @@ class ClanBattleRanking(commands.Cog):
                     msg = await channel.send(message_list.pop(0))
                     await msg.publish()
                     time.sleep(10)
+            await inter.response.send_message("Fatto")
+            await asyncio.sleep(5)
+            message = await inter.original_message()
+            await message.delete()
+
         except Exception as error:
             await self.bot.get_channel(CH_TXT_TESTING).send('**>ranking command exception**')
             await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
+            await inter.response.send_message("Errore")
+            await asyncio.sleep(5)
+            message = await inter.original_message()
+            await message.delete()
 
 
 def setup(bot):
