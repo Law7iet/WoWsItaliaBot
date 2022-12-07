@@ -1,0 +1,3 @@
+[submodule "WoWsApi"]
+	path = WoWsApi
+	url = https://github.com/Law7iet/WoWsApi.git
