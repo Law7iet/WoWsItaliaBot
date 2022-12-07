@@ -1,9 +1,10 @@
+import asyncio
 import datetime
+from typing import Union
 
 import requests
-from discord.ext.commands.context import Context
+from disnake import ApplicationCommandInteraction, ModalInteraction, Role
 
-from models.my_enum.roles_enum import RolesEnum
 from utils.constants import CONFIG_ID
 
 
@@ -28,26 +29,25 @@ def check_data(url: str) -> dict | None:
         return data
 
 
-async def check_role(ctx: Context, level_role: RolesEnum) -> bool:
-    """
-    Check if the user has the privileges. The user is the author of the message of the context. The privileges are
- based on server's roles. The roles levels are defined by `RolesEnum` my_class.
+async def check_role(inter: ApplicationCommandInteraction, role: Role) -> bool:
+    if role in inter.author.roles:
+        return True
+    else:
+        return False
 
-    Args:
-         ctx: the context.
-         level_role: the minimum RolesEnum that the user must have.
 
-     Returns:
-         a boolean that states if the user has the permission.
-    """
-    for index in range(0, int(level_role) + 1):
-        role_id = str(RolesEnum(index))
-        role = ctx.guild.get_role(int(role_id))
-        if role in ctx.message.author.roles:
-            return True
-    await ctx.message.delete()
-    await ctx.send(ctx.message.author.display_name + " non hai i permessi")
-    return False
+async def send_response_and_clear(
+        inter: Union[ApplicationCommandInteraction, ModalInteraction],
+        defer: bool,
+        text: str = "Done"
+) -> None:
+    if defer is True:
+        await inter.send(text)
+    else:
+        await inter.response.send_message(text)
+    await asyncio.sleep(5)
+    message = await inter.original_message()
+    await message.delete()
 
 
 def my_align(word: str, max_length: int, side: str) -> str:
@@ -79,29 +79,6 @@ def get_config_id() -> str:
     return CONFIG_ID
 
 
-def get_maps_reactions(size: int):
-    emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
-    return emojis[:size]
-
-
-def get_spawn_reactions():
-    return ["🅰️", "🅱️"]
-
-
-def convert_list_of_string_to_lower_or_upper(array: list[str], is_lower: bool) -> list[str]:
-    if is_lower:
-        for index in len(array):
-            array[index] = array[index].lower()
-    else:
-        for index in len(array):
-            array[index] = array[index].upper()
-    return array
-
-
-def nearest(items: any, pivot: any) -> any:
-    return min(items, key=lambda x: abs(x - pivot))
-
-
-def convert_string_to_date(string: str) -> datetime.datetime:
+def convert_string_to_datetime(string: str) -> datetime.datetime:
     x = string.split('-')
     return datetime.datetime(int(x[0]), int(x[1]), int(x[2]))

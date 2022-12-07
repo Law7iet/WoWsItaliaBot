@@ -2,7 +2,7 @@
 
 import json
 
-from config import data
+from settings.config import data
 from utils.functions import *
 
 

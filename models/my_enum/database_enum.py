@@ -2,22 +2,12 @@
 from enum import Enum
 
 
-class DatabaseCollection(Enum):
-    CONFIG = 'Config'
-    CLANS = 'Clans'
-    PICKANDBANMAP = 'PickAndBanMap'
-
-    def __str__(self):
-        return self.value
+class DBCollections(str, Enum):
+    CONFIG = "Config"
+    CLANS = "Clans"
 
 
-class ConfigFileKeys(Enum):
-    BANNED_SHIPS = 'banned_ships'
-    CLAN_BATTLE_CURRENT_SEASON = 'clan_battle_current_season'
-    CLAN_BATTLE_STARTING_DAY = 'start_date'
-    CLAN_BATTLE_FINAL_DAY = 'end_date'
-    MAPS = 'maps'
-    PLAYOFF_FORMAT = 'playoff_format'
-
-    def __str__(self):
-        return self.value
+class ConfigKeys(str, Enum):
+    CB_CURRENT_SEASON = "clan_battle_current_season"
+    CB_STARTING_DAY = "start_date"
+    CB_ENDING_DAY = "end_date"

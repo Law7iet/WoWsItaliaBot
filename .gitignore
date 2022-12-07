@@ -1,5 +1,15 @@
-config.json
-__pycache__
+# MacOS
 .DS_Store
+# JetBrains
 .idea
+# Python
+__pycache__
+# Replit
+.replit
+venv
+poetry.lock
+pyproject.toml
+replit.nix
+# Other
+config.json
 script.py

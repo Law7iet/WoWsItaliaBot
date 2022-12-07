@@ -3,8 +3,8 @@
 from bson import ObjectId
 from pymongo import MongoClient, cursor, results
 
-import config
-from models.my_enum.database_enum import DatabaseCollection
+from settings import config
+from models.my_enum.database_enum import DBCollections
 from utils.functions import get_config_id
 
 
@@ -18,7 +18,7 @@ class ApiMongoDB:
 
     # Private API
     # Parametric API to mongo
-    def __get_element(self, collection: DatabaseCollection, query: dict) -> any:
+    def __get_element(self, collection: DBCollections, query: dict) -> any:
         """
         Get an element which matches with `query` from a collection of the database.
         If an error occurs, it returns `None`.
@@ -36,7 +36,7 @@ class ApiMongoDB:
             print(error)
             return None
 
-    def __get_elements(self, collection: DatabaseCollection, query: dict) -> cursor.Cursor | None:
+    def __get_elements(self, collection: DBCollections, query: dict) -> cursor.Cursor | None:
         """
         Get elements which match with `query` from a collection of the database.
         If an error occurs, it returns `None`.
@@ -54,7 +54,7 @@ class ApiMongoDB:
             print(error)
             return None
 
-    def __insert_element(self, collection: DatabaseCollection, document: dict) -> results.InsertOneResult | None:
+    def __insert_element(self, collection: DBCollections, document: dict) -> results.InsertOneResult | None:
         """
         Insert an element in a collection of the database.
         If an error occurs, it returns `None`.
@@ -72,7 +72,7 @@ class ApiMongoDB:
             print(error)
             return None
 
-    def __update_element(self, collection: DatabaseCollection, query: dict,
+    def __update_element(self, collection: DBCollections, query: dict,
                          new_data: dict) -> results.UpdateResult | None:
         """
         Update an element in a collection of the database. The element is the first document that matches with `query`.
@@ -92,7 +92,7 @@ class ApiMongoDB:
             print(error)
             return None
 
-    def __delete_element(self, collection: DatabaseCollection, query: dict) -> results.DeleteResult | None:
+    def __delete_element(self, collection: DBCollections, query: dict) -> results.DeleteResult | None:
         """
         Delete an element from a collection of the database. The element is the first document that matches with
         `query`. If an error occurs, it returns `None`.
@@ -119,7 +119,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__get_element".
         """
-        return self.__get_element(DatabaseCollection.CONFIG, {'_id': ObjectId(get_config_id())})
+        return self.__get_element(DBCollections.CONFIG, {'_id': ObjectId(get_config_id())})
 
     def update_config(self, config_data: dict) -> results.UpdateResult | None:
         """
@@ -132,7 +132,7 @@ class ApiMongoDB:
             the result of the function "__update_element".
         """
         return self.__update_element(
-            DatabaseCollection.CONFIG, {'_id': ObjectId(get_config_id())}, {'$set': config_data})
+            DBCollections.CONFIG, {'_id': ObjectId(get_config_id())}, {'$set': config_data})
 
     # Clans Collection API
     def get_clan_by_id(self, clan_id: str) -> any:
@@ -145,7 +145,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__get_element". If no clan was found, it returns "None".
         """
-        return self.__get_element(DatabaseCollection.CLANS, {'player_id': clan_id})
+        return self.__get_element(DBCollections.CLANS, {'player_id': clan_id})
 
     def get_clans_by_tag(self, clan_tag: str) -> list | None:
         """
@@ -157,7 +157,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__get_elements" cast to a "list". If no clan was found, it returns "None".
         """
-        x = self.__get_elements(DatabaseCollection.CLANS, {'tag': {'$regex': clan_tag, '$options': 'i'}})
+        x = self.__get_elements(DBCollections.CLANS, {'tag': {'$regex': clan_tag, '$options': 'i'}})
         if x:
             return list(x)
         else:
@@ -173,7 +173,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__get_elements" cast to a "list". If no clan was found, it returns "None".
         """
-        x = self.__get_elements(DatabaseCollection.CLANS, {'name': {'$regex': clan_name, '$options': 'i'}})
+        x = self.__get_elements(DBCollections.CLANS, {'name': {'$regex': clan_name, '$options': 'i'}})
         if x:
             return list(x)
         else:
@@ -202,7 +202,7 @@ class ApiMongoDB:
             print(error)
             pass
         return self.__insert_element(
-            DatabaseCollection.CLANS,
+            DBCollections.CLANS,
             {
                 'player_id': str(clan_info['player_id']),
                 'name': str(clan_info['name']),
@@ -224,7 +224,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__update_element".
         """
-        return self.__update_element(DatabaseCollection.CLANS, {'player_id': clan_id}, clan_data)
+        return self.__update_element(DBCollections.CLANS, {'player_id': clan_id}, clan_data)
 
     def delete_clan(self, clan_id: str) -> results.DeleteResult | None:
         """
@@ -236,78 +236,4 @@ class ApiMongoDB:
         Returns:
             the result of the function "__delete_element".
         """
-        return self.__delete_element(DatabaseCollection.CLANS, {'player_id': clan_id})
-
-    # PickAndBanMap Collection API
-    def get_map_session_by_id(self, map_id: str) -> dict | None:
-        """
-        Return the map's pick&ban session by its id.
-
-        Args:
-            map_id: the session id.
-
-        Returns:
-            the session's value. If no session was found, it returns "None".
-        """
-        return self.__get_element(DatabaseCollection.PICKANDBANMAP, {'_id': ObjectId(map_id)})
-
-    def get_map_session_by_representatives(self, representative_id: str) -> list[dict]:
-        """
-        Return the map's pick&ban session by the representative's id.
-
-        Args:
-            representative_id: the session id.
-
-        Returns:
-            the list of the sessions where a representant matches with representative_id. If no session was found, it
-             returns an empty list.
-        """
-        return list(self.__get_elements(
-            DatabaseCollection.PICKANDBANMAP,
-            {
-                "$or": [{'representant_a': representative_id}, {'representant_b': representative_id}]
-            }
-        ))
-
-    def insert_map_session(self, map_session: dict) -> results.InsertOneResult | None:
-        """
-        Insert a map's pick&ban session in the collection.
-
-        Args:
-            map_session: the data of the session. It has a "turn" (int), a "representant_a" (str), a "representant_b"
-             (str), a "banned" (list[str]), a "picked" (list[str]), an "available" (list[str]) and a "playoff_format"
-             (str)
-
-        Returns:
-            the result of the function "__insert_element".
-        """
-        return self.__insert_element(
-            DatabaseCollection.PICKANDBANMAP,
-            map_session
-        )
-
-    def update_map_session(self, map_id: str, map_session: dict) -> results.UpdateResult | None:
-        """
-        Update the map's pick&ban session. The session to update is the session that _id matches with `map_id`.
-
-        Args:
-            map_id: the session id.
-            map_session: the entire session to update.
-
-        Returns:
-            the result of the function "__update_element".
-        """
-        return self.__update_element(DatabaseCollection.PICKANDBANMAP, {'_id': map_id}, map_session)
-
-    def delete_map_session(self, map_id: str) -> results.DeleteResult | None:
-        """
-        Delete a map pick&ban session from the collection. The session to delete is the session that map_id matches with
-         `map_id`.
-
-        Args:
-            map_id: the session id.
-
-        Returns:
-            the result of the function "__delete_element".
-        """
-        return self.__delete_element(DatabaseCollection.PICKANDBANMAP, {'_id': map_id})
+        return self.__delete_element(DBCollections.CLANS, {'player_id': clan_id})
