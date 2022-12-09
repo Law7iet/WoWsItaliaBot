@@ -3,7 +3,7 @@ import datetime
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
 
-from api.mongo_db import ApiMongoDB
+from api.mongo.api import ApiMongoDB
 from models.my_enum.database_enum import ConfigKeys
 from models.my_enum.roles_enum import RolesEnum
 from utils.constants import CH_TXT_TESTING
@@ -20,16 +20,9 @@ class ConfigSettings(commands.Cog):
         self.bot = bot
         self.api_mongo_db = ApiMongoDB()
 
-    async def getter(self, inter: ApplicationCommandInteraction, config_key: ConfigKeys):
-        if not await check_role(inter, inter.guild.get_role(RolesEnum.SAILOR.id())):
-            return
-        try:
-            config_file = self.api_mongo_db.get_config()
-            return config_file[str(config_key)]
-        except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send('**getter of ' + str(config_key)
-                                                            + ' type command exception**')
-            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
+    async def getter(self, config_key: ConfigKeys) -> dict:
+        config_file = self.api_mongo_db.get_config()
+        return config_file[str(config_key)]
 
     @commands.slash_command(name="clan-battle")
     async def clan_battle(self, inter: ApplicationCommandInteraction) -> None:
@@ -41,12 +34,12 @@ class ConfigSettings(commands.Cog):
         if value:
             await inter.send('La stagione delle clan battle è: `' + str(value) + '`.')
         else:
-            await inter.send('Valore incoretto: `' + str(value) + '`.')
+            await inter.send('Valore incorretto: `' + str(value) + '`.')
 
     @clan_battle.sub_command(name="get-days", description="Ritorna le date delle clan battle")
     async def get_days(self, inter: ApplicationCommandInteraction) -> None:
-        start = await self.getter(inter, ConfigKeys.CB_STARTING_DAY)
-        end = await self.getter(inter, ConfigKeys.CB_ENDING_DAY)
+        start = await self.getter(ConfigKeys.CB_STARTING_DAY)
+        end = await self.getter(ConfigKeys.CB_ENDING_DAY)
         if start and end:
             await inter.send('Le date delle clan battle sono: `' + start + '` e `' + end + '`.')
         elif not start:
@@ -56,8 +49,8 @@ class ConfigSettings(commands.Cog):
 
     @clan_battle.sub_command(name="set-season", description="Imposta il numero della stagione delle clan battle")
     async def set_season(self, inter: ApplicationCommandInteraction, season: str):
-        if not await check_role(inter, inter.guild.get_role(RolesEnum.ADMIN.id())):
-            await send_response_and_clear(inter, False, 'Non hai i permessi.')
+        if not await check_role(inter, RolesEnum.ADMIN):
+            await inter.send("Non hai i permessi")
             return
         try:
             value = int(season)
@@ -72,11 +65,12 @@ class ConfigSettings(commands.Cog):
         except Exception as error:
             await self.bot.get_channel(CH_TXT_TESTING).send('**>set_clan_battle_season command exception**')
             await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
-            await send_response_and_clear(inter, False, 'Errore')
+            await inter.send("Errore")
 
     @clan_battle.sub_command(name="set-days", description="Imposta i giorni delle clan battle: AAAA-MM-GG")
     async def set_days(self, inter: ApplicationCommandInteraction, start_date: str, end_date: str):
-        if not await check_role(inter, inter.guild.get_role(RolesEnum.ADMIN.id())):
+        if not await check_role(inter, RolesEnum.ADMIN):
+            await inter.send("Non hai i permessi")
             return
         start = start_date.split('-')
         end = end_date.split('-')
@@ -91,7 +85,7 @@ class ConfigSettings(commands.Cog):
             await inter.send("Impostato le date `" + start_date + "` e `" + end_date + "`.")
         except Exception as error:
             print(error)
-            await send_response_and_clear(inter, False, "Errore. Sintassi: AAAA-MM-GG AAAA-MM-GG")
+            await inter.send("Errore. Sintassi: AAAA-MM-GG AAAA-MM-GG")
 
 
 def setup(bot):

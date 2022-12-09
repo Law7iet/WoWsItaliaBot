@@ -3,8 +3,8 @@
 from bson import ObjectId
 from pymongo import MongoClient, cursor, results
 
-from settings import config
 from models.my_enum.database_enum import DBCollections
+from settings import config
 from utils.functions import get_config_id
 
 

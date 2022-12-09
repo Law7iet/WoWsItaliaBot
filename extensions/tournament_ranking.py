@@ -2,9 +2,8 @@ from disnake import ApplicationCommandInteraction, Attachment
 from disnake.ext import commands
 
 from models.my_enum.roles_enum import RolesEnum
-from utils.constants import *
-from utils.functions import check_role
-from utils.functions import send_response_and_clear
+from utils.constants import CH_TXT_TESTING, CH_TXT_PODIO_CUP, CH_TXT_PODIO_LEAGUE
+from utils.functions import check_role, is_debugging
 from utils.modal import ModalPodium
 
 PodiumOptions = commands.option_enum({
@@ -23,37 +22,38 @@ TournamentOptions = commands.option_enum({
 class TournamentRanking(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.debugging = is_debugging()
 
     @commands.slash_command()
     async def podium(
-            self,
-            inter: ApplicationCommandInteraction,
-            torneo: TournamentOptions,
-            edizione: int,
-            posizione: PodiumOptions,
-            immagine: Attachment
+        self,
+        inter: ApplicationCommandInteraction,
+        torneo: TournamentOptions,
+        edizione: int,
+        posizione: PodiumOptions,
+        immagine: Attachment
     ) -> None:
-        if not await check_role(inter, inter.guild.get_role(RolesEnum.ADMIN.id())):
-            await send_response_and_clear(inter, False, "Non hai i permessi.")
+        if not await check_role(inter, RolesEnum.ADMIN):
+            await inter.send("Non hai i permessi.")
             return
         if not immagine.content_type:
-            await send_response_and_clear(inter, False, "Formato immagine vuoto.")
+            await inter.send("Formato immagine vuoto.")
             return
         if not immagine.content_type == "image/jpeg" and not immagine.content_type == "image/png":
-            await send_response_and_clear(inter, False,
-                                          "Formato immagine (`" + immagine.content_type + "`) non corretto. Formati ammessi: `jpg` e `png`")
+            msg = "Formato immagine (`" + immagine.content_type + "`) non corretto. Formati ammessi: `jpg` e `png`"
+            await inter.send(msg)
             return
         if edizione <= 0:
-            await send_response_and_clear(inter, False, "Il numero dell'edizione dev'essere maggiore di 0.")
+            await inter.send("Il numero dell'edizione dev'essere maggiore di 0.")
             return
-        if DEBUG:
+        if self.debugging:
             channel = inter.guild.get_channel(CH_TXT_TESTING)
         else:
             match torneo:
                 case "Italian League":
                     channel = inter.guild.get_channel(CH_TXT_PODIO_LEAGUE)
                 case "Italian Cup":
-                    channel = inter.guild.get_channel(CH_TXT_PODIO_LEAGUE)
+                    channel = inter.guild.get_channel(CH_TXT_PODIO_CUP)
                 case _:
                     channel = inter.guild.get_channel(CH_TXT_TESTING)
         try:

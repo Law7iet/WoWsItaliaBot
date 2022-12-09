@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import datetime
 from typing import Union
@@ -6,6 +7,7 @@ import requests
 from disnake import ApplicationCommandInteraction, ModalInteraction, Role
 
 from utils.constants import CONFIG_ID
+from models.my_enum.roles_enum import RolesEnum
 
 
 def check_data(url: str) -> dict | None:
@@ -29,7 +31,8 @@ def check_data(url: str) -> dict | None:
         return data
 
 
-async def check_role(inter: ApplicationCommandInteraction, role: Role) -> bool:
+async def check_role(inter: ApplicationCommandInteraction, value: RolesEnum) -> bool:
+    role = inter.guild.get_role(value)
     if role in inter.author.roles:
         return True
     else:
@@ -82,3 +85,10 @@ def get_config_id() -> str:
 def convert_string_to_datetime(string: str) -> datetime.datetime:
     x = string.split('-')
     return datetime.datetime(int(x[0]), int(x[1]), int(x[2]))
+
+
+def is_debugging() -> bool:
+    if sys.gettrace() is None:
+        return False
+    else:
+        return True

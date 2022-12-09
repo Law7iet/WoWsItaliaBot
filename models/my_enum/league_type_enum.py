@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class LeagueTypeEnum(Enum):
+class LeagueType(Enum):
     HURRICANE = 0
     TYPHOON = 1
     STORM = 2
