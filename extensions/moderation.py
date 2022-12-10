@@ -90,7 +90,7 @@ class Moderation(commands.Cog):
                 clan_id = self.wargaming_api.player_clan_data([player_id])[0]["clan_id"]
                 if clan_id:
                     clan_tag = self.wargaming_api.clan_detail([clan_id])[0]["tag"]
-                    new_tag = "[" + clan_tag + "]"
+                    new_tag = clan_tag
                 else:
                     raise IndexError
             except IndexError:
@@ -103,7 +103,7 @@ class Moderation(commands.Cog):
                 if representation in member.roles:
                     await member.remove_roles(representation)
             # Check if the user has a name. If it's true restore the name if is shorter than 32
-            final_nick = new_tag + " " + new_nick
+            final_nick = "[" + new_tag + "] " + new_nick
             if name != "":
                 if len(final_nick + " " + name) <= 32:
                     final_nick = final_nick + " " + name
