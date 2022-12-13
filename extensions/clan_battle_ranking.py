@@ -28,7 +28,6 @@ class ClanBattleRanking(commands.Cog):
         clan_battle_ranking = [[[], [], []], [[], [], []], [[], [], []], [[], [], []], [[], [], []]]
         for italian_clan in self.api_mongo.get_clans_by_name(''):
             data = cb_ranking(int(italian_clan['id']), self.debugging)
-            # data = cb_ranking(italian_clan['id'])
             for element in data:
                 if str(element['season_number']) == str(self.api_mongo.get_config()[str(ConfigKeys.CB_CURRENT_SEASON)]):
                     promotion = []
@@ -80,7 +79,7 @@ class ClanBattleRanking(commands.Cog):
 
     @commands.slash_command(description="Genera la classifica delle Clan Battle.")
     async def classifica(self, inter: ApplicationCommandInteraction) -> None:
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, int(RolesEnum.ADMIN)):
             await inter.send("Non hai i permessi.")
             return
         try:
@@ -89,9 +88,9 @@ class ClanBattleRanking(commands.Cog):
             pos = 1
             league_index = 0
             if self.debugging:
-                channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB)
-            else:
                 channel = self.bot.get_channel(CH_TXT_TESTING)
+            else:
+                channel = self.bot.get_channel(CH_TXT_CLASSIFICA_CB)
             message_list = []
             # Compute the progressive day of CB
             mongo_config = self.api_mongo.get_config()
