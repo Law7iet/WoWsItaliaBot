@@ -3,19 +3,27 @@ from disnake import Intents, HTTPException, ApplicationCommandInteraction
 from disnake.ext import commands
 
 from settings import config
+from utils.functions import is_debugging
 
 
 if __name__ == "__main__":
+
+    if is_debugging():
+        print("--------------------------------------------------------------------------------")
+        print("                                   DEBUGGING                                    ")
+        print("--------------------------------------------------------------------------------")
 
     # Bots setup
     intents = Intents.default()
     intents.members = True
     bot = commands.InteractionBot(intents=intents, test_guilds=[379679393989001221])
     extensions = [
+        "authentication",
         "clan_battle_ranking",
-        "config_settings",
+        "clan_battle_settings",
         "event_manager",
         "moderation",
+        "nickname",
         "tournament_ranking"
     ]
     for extension in extensions:

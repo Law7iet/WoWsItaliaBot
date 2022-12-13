@@ -15,14 +15,14 @@ EventOptions = commands.option_enum({
 })
 
 
-class ConfigSettings(commands.Cog):
+class ClanBattleSettings(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.api_mongo_db = ApiMongoDB()
 
     async def getter(self, config_key: ConfigKeys) -> dict:
         config_file = self.api_mongo_db.get_config()
-        return config_file[str(config_key)]
+        return config_file["clan_battle_info"][str(config_key)]
 
     @commands.slash_command(name="clan-battle")
     async def clan_battle(self, inter: ApplicationCommandInteraction) -> None:
@@ -89,4 +89,4 @@ class ConfigSettings(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(ConfigSettings(bot))
+    bot.add_cog(ClanBattleSettings(bot))

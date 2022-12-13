@@ -4,17 +4,18 @@ from bson import ObjectId
 from pymongo import MongoClient, cursor, results
 
 from models.my_enum.database_enum import DBCollections
-from settings import config
+# from settings import config
 from utils.functions import get_config_id
 
 
 class ApiMongoDB:
     def __init__(self):
-        self.project = 'WoWsItaliaBot'
-        self.database_name = 'WoWsItaliaBotDB'
+        # self.database_name = 'WoWsItaliaBotDB'
+        self.database_name = "WoWsItaliaDB"
 
-        self.client = MongoClient('mongodb+srv://' + config.data['MONGO_USER'] + ':' + config.data[
-            'MONGO_PASSWORD'] + '@cluster0.rtvit.mongodb.net/' + self.project + '?retryWrites=true&w=majority')
+        # self.client = MongoClient('mongodb+srv://' + config.data['MONGO_USER'] + ':' + config.data[
+        #     'MONGO_PASSWORD'] + '@cluster0.rtvit.mongodb.net/' + self.project + '?retryWrites=true&w=majority')
+        self.client = MongoClient()
 
     # Private API
     # Parametric API to mongo

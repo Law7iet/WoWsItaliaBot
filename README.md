@@ -18,15 +18,6 @@ An authenticated user can ask to be the representative of his clan. Each clan ca
 If it's available space, the bot has to update the DB.
 It needs a reverse command (remove representative). This command can be triggered by moderators.
 
-4. MapVote
-A specific user can trigger this command. It displays an embed message for the pick&ban of the map. When pick or ban a map, the embed will update the current state.
-It's already implemented, but it needs to update it: the ban and pick commands is triggered sending a private message to the bot and the mapvote become a session-object stored in the DB.
-A specific role can pick/ban for the user and close the session.
-
-5. Pick&Ban
-A specific user can trigger this command. It makes the pick and ban of the ships.
-The structure il already implemented, it misses the embed message (currently the bot sends raw message).
-
 6. CheckRole
 A function to check if a user has a role. Hierarchy of the roles?
 
