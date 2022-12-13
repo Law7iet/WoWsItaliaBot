@@ -33,7 +33,7 @@ class TournamentRanking(commands.Cog):
         posizione: PodiumOptions,
         immagine: Attachment
     ) -> None:
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, int(RolesEnum.ADMIN)):
             await inter.send("Non hai i permessi.")
             return
         if not immagine.content_type:

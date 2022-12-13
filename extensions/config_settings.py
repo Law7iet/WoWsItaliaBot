@@ -49,7 +49,7 @@ class ConfigSettings(commands.Cog):
 
     @clan_battle.sub_command(name="set-season", description="Imposta il numero della stagione delle clan battle")
     async def set_season(self, inter: ApplicationCommandInteraction, season: str):
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, int(RolesEnum.ADMIN)):
             await inter.send("Non hai i permessi")
             return
         try:
@@ -69,7 +69,7 @@ class ConfigSettings(commands.Cog):
 
     @clan_battle.sub_command(name="set-days", description="Imposta i giorni delle clan battle: AAAA-MM-GG")
     async def set_days(self, inter: ApplicationCommandInteraction, start_date: str, end_date: str):
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, int(RolesEnum.ADMIN)):
             await inter.send("Non hai i permessi")
             return
         start = start_date.split('-')

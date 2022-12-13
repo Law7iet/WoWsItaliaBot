@@ -19,7 +19,7 @@ class Moderation(commands.Cog):
 
     @commands.slash_command(name="write", description="Write a embed message and ping a role to notify them.")
     async def write(self, inter: ApplicationCommandInteraction, canale: TextChannel, ruolo: Role) -> None:
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, int(RolesEnum.ADMIN)):
             await inter.send("Non hai i permessi.")
             return
         try:
@@ -31,7 +31,7 @@ class Moderation(commands.Cog):
     @commands.slash_command(name="nickname", description="Change the members' nickname with the in-game nickname")
     async def nickname(self, inter: ApplicationCommandInteraction):
         await inter.response.defer()
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, int(RolesEnum.ADMIN)):
             await inter.send("Non hai i permessi.")
             return
         # Get all the server's members
