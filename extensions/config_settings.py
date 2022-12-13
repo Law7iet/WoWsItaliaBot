@@ -1,13 +1,18 @@
 import datetime
 
-from discord.ext import commands
+from disnake import ApplicationCommandInteraction
+from disnake.ext import commands
 
-from api.mongo_db import ApiMongoDB
-from models.my_enum.database_enum import ConfigFileKeys
-from models.my_enum.playoff_format_enum import PlayoffFormatEnum
+from api.mongo.api import ApiMongoDB
+from models.my_enum.database_enum import ConfigKeys
 from models.my_enum.roles_enum import RolesEnum
-from utils.constants import CH_TXT_TESTING
-from utils.functions import check_role
+from models.my_enum.channels_enum import ChannelsEnum
+from utils.functions import check_role, send_response_and_clear
+
+EventOptions = commands.option_enum({
+    "Data di inizio": "Data di inizio",
+    "Data di fine": "Data di fine"
+})
 
 
 class ConfigSettings(commands.Cog):
@@ -15,124 +20,72 @@ class ConfigSettings(commands.Cog):
         self.bot = bot
         self.api_mongo_db = ApiMongoDB()
 
-    async def getter(self, ctx: commands.context.Context, config_key: ConfigFileKeys):
-        if not await check_role(ctx, RolesEnum.SAILOR):
-            return
-        try:
-            config_file = self.api_mongo_db.get_config()
-            return config_file[str(config_key)]
-        except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send('**getter of ' + str(config_key)
-                                                            + ' type command exception**')
-            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
+    async def getter(self, config_key: ConfigKeys) -> dict:
+        config_file = self.api_mongo_db.get_config()
+        return config_file[str(config_key)]
 
-    @commands.command()
-    async def get_battle_type(self, ctx: commands.context.Context):
-        value = await self.getter(ctx, ConfigFileKeys.PLAYOFF_FORMAT)
-        if value:
-            await ctx.send('La modalità di battaglia è: ' + value + '.')
+    @commands.slash_command(name="clan-battle")
+    async def clan_battle(self, inter: ApplicationCommandInteraction) -> None:
+        pass
 
-    @commands.command()
-    async def get_clan_battle_season(self, ctx: commands.context.Context):
-        value = await self.getter(ctx, ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON)
+    @clan_battle.sub_command(name="get-season", description="Ritorna il numero della stagione delle clan battle.")
+    async def get_season(self, inter: ApplicationCommandInteraction) -> None:
+        value = await self.getter(ConfigKeys.CB_CURRENT_SEASON)
         if value:
-            await ctx.send('La stagione delle clan battle è: ' + str(value) + '.')
-
-    @commands.command()
-    async def get_maps(self, ctx: commands.context.Context):
-        value = await self.getter(ctx, ConfigFileKeys.MAPS)
-        if value:
-            message = ''
-            for element in value:
-                message = message + '- ' + element + '\n'
-            await ctx.send('Le mappe sono:\n' + message)
+            await inter.send('La stagione delle clan battle è: `' + str(value) + '`.')
         else:
-            await ctx.send('Non è stata impostata nessuna mappa.')
+            await inter.send('Valore incorretto: `' + str(value) + '`.')
 
-    @commands.command()
-    async def set_battle_type(self, ctx: commands.context.Context, battle_type: str):
-        if not await check_role(ctx, RolesEnum.ADMIN):
-            return
-        try:
-            battle_type = battle_type.upper()
-            battle_type = PlayoffFormatEnum(battle_type)
-            match battle_type:
-                case PlayoffFormatEnum.BO1:
-                    value = 'Bo1'
-                case PlayoffFormatEnum.BO3:
-                    value = 'Bo3'
-                case PlayoffFormatEnum.BO5:
-                    value = 'Bo5'
-                case _:
-                    return
-            data = {str(ConfigFileKeys.PLAYOFF_FORMAT): value}
-            result = self.api_mongo_db.update_config(data)
-            if result.matched_count == 1:
-                await ctx.send('Impostato la modalità: ' + value + '.')
-            else:
-                raise Exception(result)
-        except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send('**>set_battle_type command exception**')
-            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
+    @clan_battle.sub_command(name="get-days", description="Ritorna le date delle clan battle")
+    async def get_days(self, inter: ApplicationCommandInteraction) -> None:
+        start = await self.getter(ConfigKeys.CB_STARTING_DAY)
+        end = await self.getter(ConfigKeys.CB_ENDING_DAY)
+        if start and end:
+            await inter.send('Le date delle clan battle sono: `' + str(start) + '` e `' + str(end) + '`.')
+        elif not start:
+            await inter.send('Data d\'inizio vuota: : `' + str(start) + '`.')
+        elif not end:
+            await inter.send('Data di fine vuota: : `' + str(end) + '`.')
 
-    @commands.command()
-    async def set_clan_battle_season(self, ctx: commands.context.Context, season: str):
-        if not await check_role(ctx, RolesEnum.ADMIN):
+    @clan_battle.sub_command(name="set-season", description="Imposta il numero della stagione delle clan battle")
+    async def set_season(self, inter: ApplicationCommandInteraction, season: str):
+        if not await check_role(inter, RolesEnum.ADMIN):
+            await inter.send("Non hai i permessi")
             return
         try:
             value = int(season)
             if value <= 0:
                 return
-            data = {str(ConfigFileKeys.CLAN_BATTLE_CURRENT_SEASON): value}
+            data = {str(ConfigKeys.CB_CURRENT_SEASON): value}
             result = self.api_mongo_db.update_config(data)
             if result.matched_count == 1:
-                await ctx.send('Impostato la stagione: ' + str(value) + '.')
+                await send_response_and_clear(inter, False, 'Impostato la stagione: `' + str(value) + '`.')
             else:
                 raise Exception(result)
         except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send('**>set_clan_battle_season command exception**')
-            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
+            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send('**>set_season command exception**')
+            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send('```' + str(error) + '```')
+            await inter.send("Errore")
 
-    @commands.command()
-    async def set_maps(self, ctx: commands.context.Context, *, maps: str):
-        if not await check_role(ctx, RolesEnum.ADMIN):
+    @clan_battle.sub_command(name="set-days", description="Imposta i giorni delle clan battle: AAAA-MM-GG")
+    async def set_days(self, inter: ApplicationCommandInteraction, start_date: str, end_date: str):
+        if not await check_role(inter, RolesEnum.ADMIN):
+            await inter.send("Non hai i permessi")
             return
-        try:
-            map_list = maps.split(',')
-            value_list = []
-            message = ''
-            for element in map_list:
-                x = element.lstrip(' ')
-                y = x.rstrip(' ')
-                if y:
-                    value_list.append(y)
-                    message = message + '- ' + y + '\n'
-            data = {str(ConfigFileKeys.MAPS): value_list}
-            result = self.api_mongo_db.update_config(data)
-            if result.matched_count == 1:
-                await ctx.send('Impostato le mappe:\n' + message[:-2])
-            else:
-                raise Exception(result)
-        except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send('**>set_maps command exception**')
-            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
-
-    @commands.command()
-    async def set_cb_days(self, ctx: commands.context.Context, start: str, end: str):
-        if not await check_role(ctx, RolesEnum.ADMIN):
-            return
-        start = start.split('-')
-        end = end.split('-')
+        start = start_date.split('-')
+        end = end_date.split('-')
         try:
             # Check integrity
             start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]))
             end = datetime.datetime(int(end[0]), int(end[1]), int(end[2]))
-            data1 = {str(ConfigFileKeys.CLAN_BATTLE_STARTING_DAY): start.strftime('%Y-%m-%d')}
-            data2 = {str(ConfigFileKeys.CLAN_BATTLE_FINAL_DAY): end.strftime('%Y-%m-%d')}
-            result = self.api_mongo_db.update_config(data1)
-            result = self.api_mongo_db.update_config(data2)
-        except:
-            await ctx.send("Errore. sintassi: AAAA-MM-GG AAAA-MM-GG")
+            data1 = {str(ConfigKeys.CB_STARTING_DAY): start.strftime('%Y-%m-%d')}
+            data2 = {str(ConfigKeys.CB_ENDING_DAY): end.strftime('%Y-%m-%d')}
+            self.api_mongo_db.update_config(data1)
+            self.api_mongo_db.update_config(data2)
+            await inter.send("Impostato le date `" + start_date + "` e `" + end_date + "`.")
+        except Exception as error:
+            print(error)
+            await inter.send("Errore. Sintassi: AAAA-MM-GG AAAA-MM-GG")
 
 
 def setup(bot):

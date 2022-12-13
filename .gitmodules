@@ -1,0 +1,4 @@
+[submodule "api/wows"]
+	path = api/wows
+	url = https://github.com/Law7iet/WoWsApi
+	branch = main

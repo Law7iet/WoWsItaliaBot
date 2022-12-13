@@ -1,82 +1,67 @@
-import discord
-from discord.ext import commands
-from utils.constants import *
-from models.my_enum.podium_enum import *
+from disnake import ApplicationCommandInteraction, Attachment
+from disnake.ext import commands
+
 from models.my_enum.roles_enum import RolesEnum
-from utils.functions import check_role
+from models.my_enum.channels_enum import ChannelsEnum
+from utils.functions import check_role, is_debugging
+from utils.modal import ModalPodium
 
+PodiumOptions = commands.option_enum({
+    "Primo": "Primo",
+    "Secondo": "Secondo",
+    "Terzo": "Terzo",
+    "Partecipante": "Partecipante"
+})
 
-def podio(torneo: TournamentEnum, edizione: int, posizione: int, team: str, immagine: str, partecipanti: tuple[str]):
-    match torneo:
-        case TournamentEnum.LEAGUE:
-            evento = str(TournamentEnum.LEAGUE)
-        case TournamentEnum.LEAGUE:
-            evento = str(TournamentEnum.LEAGUE)
-        case _:
-            return None
-    match posizione:
-        case PodiumEnum.FIRST.value:
-            classificato = PodiumEnum.FIRST
-        case PodiumEnum.SECOND.value:
-            classificato = PodiumEnum.SECOND
-        case PodiumEnum.THIRD.value:
-            classificato = PodiumEnum.THIRD
-        case _:
-            classificato = PodiumEnum.OTHER
-    color = int(classificato)
-    if posizione is not PodiumEnum.OTHER:
-        descrizione = str(classificato) + ' classificato dell\'Italian ' + str(evento) + ' ' + str(edizione) + '.'
-    else:
-        descrizione = 'Partecipante dell\'Italian ' + str(evento) + str(edizione) + '.'
-    embed = discord.Embed(title=team, description=descrizione, color=discord.Colour(int(color)))
-    embed.set_thumbnail(url=immagine)
-    embed.set_footer(text='Congratulazioni!')
-    if partecipanti:
-        giocatori = ''
-        for partecipante in partecipanti:
-            giocatori = giocatori + partecipante.replace(',', '') + ', '
-        giocatori = giocatori[:-2]
-        embed.add_field(name='Partecipanti:', value=giocatori, inline=True)
-    return embed
+TournamentOptions = commands.option_enum({
+    "Italian League": "Italian League",
+    "Italian Cup": "Italian Cup",
+})
 
 
 class TournamentRanking(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.debugging = is_debugging()
 
-    @commands.command()
-    async def league(self, ctx: commands.context.Context, edizione: str, posizione: str, team: str, immagine: str,
-                     *partecipanti: str):
-        if not await check_role(ctx, RolesEnum.ADMIN):
+    @commands.slash_command()
+    async def podium(
+        self,
+        inter: ApplicationCommandInteraction,
+        torneo: TournamentOptions,
+        edizione: int,
+        posizione: PodiumOptions,
+        immagine: Attachment
+    ) -> None:
+        if not await check_role(inter, RolesEnum.ADMIN):
+            await inter.send("Non hai i permessi.")
             return
-        try:
-            if not (edizione.isdigit()) or not (posizione.isdigit()):
-                return
-            embed = podio(TournamentEnum.LEAGUE, int(edizione), int(posizione), team, immagine, partecipanti)
-            if not embed:
-                return
-            channel = self.bot.get_channel(CH_TXT_PODIO_LEAGUE) if not DEBUG else self.bot.get_channel(CH_TXT_TESTING)
-            await channel.send(embed=embed)
-        except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send('**>league command exception**')
-            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
-
-    @commands.command()
-    async def cup(self, ctx: commands.context.Context, edizione: str, posizione: str, team: str, immagine: str,
-                  *partecipanti: str):
-        if not await check_role(ctx, RolesEnum.ADMIN):
+        if not immagine.content_type:
+            await inter.send("Formato immagine vuoto.")
             return
+        if not immagine.content_type == "image/jpeg" and not immagine.content_type == "image/png":
+            msg = "Formato immagine (`" + immagine.content_type + "`) non corretto. Formati ammessi: `jpg` e `png`"
+            await inter.send(msg)
+            return
+        if edizione <= 0:
+            await inter.send("Il numero dell'edizione dev'essere maggiore di 0.")
+            return
+        if self.debugging:
+            channel = inter.guild.get_channel(int(ChannelsEnum.TXT_TESTING))
+        else:
+            match torneo:
+                case "Italian League":
+                    channel = inter.guild.get_channel(int(ChannelsEnum.TXT_PODIO_LEAGUE))
+                case "Italian Cup":
+                    channel = inter.guild.get_channel(int(ChannelsEnum.TXT_PODIO_CUP))
+                case _:
+                    channel = inter.guild.get_channel(int(ChannelsEnum.TXT_TESTING))
         try:
-            if not (edizione.isdigit()) or not (posizione.isdigit()):
-                return
-            embed = podio(TournamentEnum.CUP, int(edizione), int(posizione), team, immagine, *partecipanti)
-            if not embed:
-                return
-            channel = self.bot.get_channel(CH_TXT_PODIO_CUP) if not DEBUG else self.bot.get_channel(CH_TXT_TESTING)
-            await channel.send(embed=embed)
+            await inter.response.send_modal(modal=ModalPodium(channel, torneo, edizione, posizione, immagine))
         except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send('**>cup command exception**')
-            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
+            msg = '**>podium command exception: ModalPodium error**'
+            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send(msg)
+            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send('```' + str(error) + '```')
 
 
 def setup(bot):

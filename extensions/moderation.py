@@ -1,136 +1,119 @@
 import re
 
-import discord
-from discord.ext import commands
+from disnake import ApplicationCommandInteraction, Role, TextChannel
+from disnake.ext import commands
 
-from api.wargaming import ApiWargaming
+from api.wows.api import WoWsSession
 from models.my_enum.roles_enum import RolesEnum
-from utils.constants import *
-from utils.functions import my_align, check_role
+from models.my_enum.channels_enum import ChannelsEnum
+from settings import config
+from utils.functions import my_align, send_response_and_clear, check_role, is_debugging
+from utils.modal import Modal
 
 
 class Moderation(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.wargamingApi = ApiWargaming()
+        self.debugging = is_debugging()
+        self.wargaming_api = WoWsSession(config.data["APPLICATION_ID"], is_debugging())
 
-    @commands.command()
-    async def write(self, ctx: commands.context.Context, channel_id: str, *, message: str):
-        if not await check_role(ctx, RolesEnum.ADMIN):
+    @commands.slash_command(name="write", description="Write a embed message and ping a role to notify them.")
+    async def write(self, inter: ApplicationCommandInteraction, canale: TextChannel, ruolo: Role) -> None:
+        if not await check_role(inter, RolesEnum.ADMIN):
+            await inter.send("Non hai i permessi.")
             return
         try:
-            guild = ctx.guild
-            if discord.version_info.minor == 2:
-                # Discord >= 2.0.0
-                channel = guild.get_channel_or_thread(int(channel_id)) if not DEBUG else self.bot.get_channel(
-                    CH_TXT_TESTING)
-            else:
-                # Discord < 2.0.0
-                # It should be the 1.7.3
-                channel = guild.get_channel(int(channel_id)) if not DEBUG else self.bot.get_channel(CH_TXT_ADMIN)
-            await channel.send(message)
+            await inter.response.send_modal(modal=Modal(ruolo, canale))
         except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send('**>write command exception**')
-            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
+            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send("**>write command exception**")
+            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send("```" + str(error) + "```")
 
-    @commands.command()
-    async def edit(self, ctx: commands.context.Context, channel_id: str, message_id: str, *, new_message: str):
-        if not await check_role(ctx, RolesEnum.ADMIN):
+    @commands.slash_command(name="nickname", description="Change the members' nickname with the in-game nickname")
+    async def nickname(self, inter: ApplicationCommandInteraction):
+        await inter.response.defer()
+        if not await check_role(inter, RolesEnum.ADMIN):
+            await inter.send("Non hai i permessi.")
             return
-        try:
-            guild = ctx.guild
-            if discord.version_info.minor == 2:
-                # Discord >= 2.0.0
-                channel = guild.get_channel_or_thread(int(channel_id))
-            else:
-                # Discord < 2.0.0
-                # It should be the 1.7.3
-                channel = guild.get_channel(int(channel_id))
-            message = await channel.fetch_message(int(message_id))
-            await message.edit(content=new_message)
-        except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send('**>edit command exception**')
-            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
+        # Get all the server's members
+        guild = inter.guild
+        members = guild.members
+        for member in members:
+            # Print check
+            if self.debugging:
+                print("USER: " + my_align(member.display_name, 35, "left"))
 
-    @commands.command()
-    async def nickname(self, ctx: commands.context.Context):
-        if not await check_role(ctx, RolesEnum.ADMIN):
-            return
-        try:
-            # Get all the server's members
-            guild = ctx.guild
-            members = guild.members
-            for member in members:
-                try:
-                    # Print check
-                    if DEBUG:
-                        print(my_align(member.display_name, 35, 'left'))
-                    # Skip if member has admin, mod, cc, cm, org tag
-                    if guild.get_role(ROLE_ADMIN) in member.roles:
-                        continue
-                    if guild.get_role(ROLE_MODERATORE) in member.roles:
-                        continue
-                    if guild.get_role(ROLE_CM) in member.roles:
-                        continue
-                    if guild.get_role(ROLE_CC) in member.roles:
-                        continue
-                    if guild.get_role(ROLE_ORG_CUP) in member.roles:
-                        continue
-                    if guild.get_role(ROLE_ORG_LEAGUE) in member.roles:
-                        continue
+            # Skip if member has admin, mod, cc, cm, org tag
+            if guild.get_role(int(RolesEnum.ADMIN)) in member.roles:
+                continue
+            if guild.get_role(int(RolesEnum.MOD)) in member.roles:
+                continue
+            if guild.get_role(int(RolesEnum.CM)) in member.roles:
+                continue
+            if guild.get_role(int(RolesEnum.CC)) in member.roles:
+                continue
+            if guild.get_role(int(RolesEnum.ORG_CUP)) in member.roles:
+                continue
+            if guild.get_role(int(RolesEnum.ORG_LEAGUE)) in member.roles:
+                continue
+            if guild.get_role(int(RolesEnum.REF)) in member.roles:
+                continue
+            # Select who has "marinario" role
+            if not (guild.get_role(int(RolesEnum.SAILOR)) in member.roles):
+                continue
+            # Select nickname
+            tmp = re.sub(r"\[.+]", "", member.display_name)
+            tmp = re.sub(r"\(.+\)", "", tmp)
+            old_nick = tmp.lstrip().rstrip()
+            # Select clan tag
+            try:
+                old_tag = re.search(r"\[.+]", member.display_name).group(0)[1:-1]
+            except AttributeError:
+                old_tag = ''
+            # Select name
+            try:
+                name = re.search(r"\(.+\)", member.display_name).group(0)
+            except AttributeError:
+                name = ''
+            # Get user's current nickname and his clan tag using WoWs API
+            try:
+                player_info = self.wargaming_api.players(old_nick)[0]
+            except IndexError:
+                print(my_align(member.display_name, 35, 'left') + 'non è stato trovato')
+                continue
+            player_id = player_info["account_id"]
+            game_nick = player_info["nickname"]
+            # Select user's nickname
+            new_nick = game_nick
+            # Check if user is in a clan
+            try:
+                # The player has a clan
+                clan_id = self.wargaming_api.player_clan_data([player_id])[0]["clan_id"]
+                if clan_id:
+                    clan_tag = self.wargaming_api.clan_detail([clan_id])[0]["tag"]
+                    new_tag = clan_tag
+                else:
+                    raise IndexError
+            except IndexError:
+                # The players don't have a clan
+                new_tag = ""
 
-                    # Select who has "marinario" role
-                    if not(guild.get_role(ROLE_MARINAIO) in member.roles):
-                        continue
+            # Check if the user changed clan
+            if old_tag != new_tag:
+                representation = guild.get_role(int(RolesEnum.REP))
+                if representation in member.roles:
+                    await member.remove_roles(representation)
+            # Check if the user has a name. If it's true restore the name if is shorter than 32
+            final_nick = "[" + new_tag + "] " + new_nick
+            if name != "":
+                if len(final_nick + " " + name) <= 32:
+                    final_nick = final_nick + " " + name
+            # Change nickname if the original nickname was changed
+            if final_nick != member.display_name:
+                await member.edit(nick=final_nick)
+                if self.debugging:
+                    print(my_align(member.display_name, 35, 'left') + '-> ' + final_nick)
 
-                    # Select their nickname or their name if they don't have a nickname
-                    user = member.display_name
-                    # Delete clan tag and their real name
-                    user = re.sub(r'\[.+\]', '', user)
-                    user = user.lstrip()
-                    name = re.search(r'\(([A-Za-z0-9_]+)\)', user)
-                    if name is not None:
-                        user = re.sub(r'\(.+\)', '', user)
-                        name = name.group(1)
-                    # Get user's nickname and his clan tag using WoWs API
-                    player_info = self.wargamingApi.get_player_by_nick(user)
-                    if not player_info:
-                        # The string "user" isn't an in-game nickname
-                        if DEBUG:
-                            print(my_align(member.display_name, 35, 'left') + 'non è stato trovato')
-                        continue
-                    player_id = player_info[0]
-                    game_nick = player_info[1]
-                    # Select user's nickname
-                    new_nick = game_nick
-                    # Check if user is in a clan
-                    clan_id = self.wargamingApi.get_clan_by_player_id(str(player_id))
-                    if clan_id and clan_id[0]:
-                        # The user has a clan. Add his clan's tag
-                        clanInfo = self.wargamingApi.get_clan_name_by_id(str(clan_id[0]))
-                        new_nick = '[' + clanInfo[1] + '] ' + game_nick
-                    # Check if the user has a name. If it's true restore the name if is shorter than 32
-                    if name is not None and len(new_nick + ' (' + name + ')') <= 32:
-                        # Add his name
-                        new_nick = new_nick + ' (' + name + ')'
-                    # Change nickname if the original nickname was changed
-                    if new_nick is not member.display_name:
-                        await member.edit(nick=new_nick)
-                        representation = guild.get_role(ROLE_RAPPRESENTANTE_CLAN)
-                        if representation in member.roles:
-                            await member.remove_roles(representation)
-                        if DEBUG:
-                            print(my_align(member.display_name, 35, 'left') + '-> ' + new_nick)
-                except Exception as error:
-                    # Unexpected error during the member iteration
-                    await self.bot.get_channel(CH_TXT_TESTING).send('**>nickname command exception in the iteration**')
-                    await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
-                    # Continue the iteration
-                    pass
-            await ctx.send('Aggiornamento finito')
-        except Exception as error:
-            await self.bot.get_channel(CH_TXT_TESTING).send('**>nickname command exception**')
-            await self.bot.get_channel(CH_TXT_TESTING).send('```' + str(error) + '```')
+        await send_response_and_clear(inter, True, "Fatto!")
 
 
 def setup(bot):

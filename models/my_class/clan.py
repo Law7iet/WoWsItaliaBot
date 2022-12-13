@@ -1,9 +1,9 @@
 # Objects used for the ranking of the clan battle.
-from models.my_enum.league_type_enum import LeagueTypeEnum
+from models.my_enum.league_type_enum import LeagueType
 
 
 class Clan:
-    def __init__(self, tag: str, squad: str, win_rate: str, battles: int, league: LeagueTypeEnum, division: int,
+    def __init__(self, tag: str, squad: str, win_rate: str, battles: int, league: LeagueType, division: int,
                  score: int, promotion: list):
         self.tag = tag
         self.squad = squad
