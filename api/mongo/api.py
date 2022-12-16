@@ -238,3 +238,61 @@ class ApiMongoDB:
             the result of the function "__delete_element".
         """
         return self.__delete_element(DBCollections.CLANS, {'player_id': clan_id})
+
+    def get_player(self, discord_id: str = "", wows_id: str = "") -> list | None:
+        query = {'$or': [
+            {'discord': discord_id},
+            {'wows': wows_id}
+        ]}
+        x = self.__get_elements(DBCollections.PLAYERS, query)
+        if x:
+            return list(x)
+        else:
+            return None
+
+    def insert_player(
+        self,
+        discord_id: str,
+        wows_id: str,
+        token: str,
+        expire: str
+    ) -> results.InsertOneResult | None:
+        player = self.get_player(discord_id, wows_id)
+        if player:
+            player = player[0]
+            if player["discord_id"] == discord_id:
+                print("Discord ID is already in the DB.")
+            elif player["wows_id"] == wows_id:
+                print("WoWs ID is already in the DB.")
+            else:
+                print("sus: this should never happens")
+            return None
+        else:
+            inserted_player = self.__insert_element(
+                DBCollections.PLAYERS,
+                {
+                    'discord': discord_id,
+                    'wows': wows_id,
+                    'token': token,
+                    'expire': expire
+                }
+            )
+            if inserted_player:
+                if inserted_player.inserted_id:
+                    return inserted_player
+            return None
+
+    def delete_player(
+        self,
+        discord_id: str = "",
+        wows_id: str = "",
+    ) -> results.DeleteResult | None:
+        return self.__delete_element(
+            DBCollections.PLAYERS,
+            {
+                '$or': [
+                    {'discord': discord_id},
+                    {'wows': wows_id}
+                ]
+            }
+        )
