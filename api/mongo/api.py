@@ -146,7 +146,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__get_element". If no clan was found, it returns "None".
         """
-        return self.__get_element(DBCollections.CLANS, {'player_id': clan_id})
+        return self.__get_element(DBCollections.CLANS, {'id': clan_id})
 
     def get_clans_by_tag(self, clan_tag: str) -> list | None:
         """
@@ -191,7 +191,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__insert_element".
         """
-        if self.get_clan_by_id(str(clan_info['player_id'])) is not None:
+        if self.get_clan_by_id(str(clan_info['id'])) is not None:
             # The clan is already stored
             return None
         r1 = None
@@ -205,7 +205,7 @@ class ApiMongoDB:
         return self.__insert_element(
             DBCollections.CLANS,
             {
-                'player_id': str(clan_info['player_id']),
+                'id': str(clan_info['id']),
                 'name': str(clan_info['name']),
                 'tag': str(clan_info['tag']),
                 'representations': [
