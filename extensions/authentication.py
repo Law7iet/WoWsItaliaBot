@@ -8,7 +8,7 @@ from api.mongo.api import ApiMongoDB
 from api.wows.api import WoWsSession
 from models.my_enum.roles_enum import RolesEnum
 from settings import config
-from utils.functions import is_debugging
+from utils.functions import is_debugging, logout
 
 
 class Authentication(commands.Cog):
@@ -53,8 +53,8 @@ Informazioni ulteriori **non verranno utilizzati**.
         # Get player info
         try:
             data = self.api_mongo_db.get_player(discord_id=str(inter.author.id))
-            player_id = data[0]["wows"]
-        except (TypeError, IndexError):
+            player_id = data["wows"]
+        except TypeError:
             await inter.send("Non hai effettuato l'autenticazione. Digita `/auth`")
             return
 
@@ -76,21 +76,7 @@ Informazioni ulteriori **non verranno utilizzati**.
 
     @commands.slash_command(name="logout", description="Effettua il logout.")
     async def logout(self, inter: ApplicationCommandInteraction):
-        await inter.response.defer()
-        data = self.api_mongo_db.delete_player(str(inter.author.id))
-        try:
-            if data.deleted_count == 1:
-                # Remove role and restore nickname
-                await inter.author.remove_roles(inter.guild.get_role(int(RolesEnum.AUTH)))
-                try:
-                    await inter.author.edit(nick=None)
-                except errors.Forbidden:
-                    pass
-                await inter.send("Hai effettuato correttamente il logout.")
-            else:
-                raise AttributeError
-        except AttributeError:
-            await inter.send("Non hai effettuato il login.")
+        await logout(inter, self.api_mongo_db)
 
 
 def setup(bot):

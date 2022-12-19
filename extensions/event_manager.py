@@ -3,7 +3,8 @@ from disnake.ext import commands
 
 from api.mongo.api import ApiMongoDB
 from models.my_enum.channels_enum import ChannelsEnum
-from models.my_enum.roles_enum import RolesEnum
+
+from utils.functions import logout
 
 
 class EventManager(commands.Cog):
@@ -23,14 +24,7 @@ class EventManager(commands.Cog):
             return
 
         elif inter.component.custom_id == "logout":
-            data = self.api_mongo_db.delete_player(str(inter.author.id))
-            try:
-                if data.deleted_count == 1:
-                    await inter.author.remove_roles(inter.guild.get_role(int(RolesEnum.AUTH)))
-                    await inter.author.edit(nick=None)
-                    await inter.response.send_message("Hai effettuato correttamente il logout.", ephemeral=True)
-            except AttributeError:
-                await inter.response.send_message("Non hai effettuato il login.", ephemeral=True)
+            await logout(inter, self.api_mongo_db)
 
 
 def setup(bot):

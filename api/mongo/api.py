@@ -4,32 +4,29 @@ from bson import ObjectId
 from pymongo import MongoClient, cursor, results
 
 from models.my_enum.database_enum import DBCollections
-# from settings import config
 from utils.functions import get_config_id
 
 
 class ApiMongoDB:
     def __init__(self):
-        # self.database_name = 'WoWsItaliaBotDB'
         self.database_name = "WoWsItaliaDB"
-
-        # self.client = MongoClient('mongodb+srv://' + config.data['MONGO_USER'] + ':' + config.data[
-        #     'MONGO_PASSWORD'] + '@cluster0.rtvit.mongodb.net/' + self.project + '?retryWrites=true&w=majority')
         self.client = MongoClient()
 
-    # Private API
+    ####################################################################################################################
+    #                                                PRIVATE API                                                       #
+    ####################################################################################################################
     # Parametric API to mongo
-    def __get_element(self, collection: DBCollections, query: dict) -> any:
+    def __get_element(self, collection: DBCollections, query: dict) -> any | None:
         """
-        Get an element which matches with `query` from a collection of the database.
-        If an error occurs, it returns `None`.
+        Gets an element which matches with `query` from a collection of the database.
 
         Args:
-            collection: it states which collection the function is using.
-            query: the query.
+            collection: The collection of the database.
+            query: The query.
 
         Returns:
-            the result of the function find_one. If an error occurs, it returns None.
+            The result of the function `find_one`.
+            If an error occurs, it returns `None`.
         """
         try:
             return self.client[self.database_name][str(collection)].find_one(query)
@@ -39,15 +36,15 @@ class ApiMongoDB:
 
     def __get_elements(self, collection: DBCollections, query: dict) -> cursor.Cursor | None:
         """
-        Get elements which match with `query` from a collection of the database.
-        If an error occurs, it returns `None`.
+        Gets the elements which match with `query` from a collection of the database.
 
         Args:
-            `collection` (DatabaseCollection): it states which collection the function is using.
-            `query` (dict): the query.
+            collection: The collection of the database.
+            query: The query.
 
         Returns:
-            `cursor.Cursor` | `None`: the result of the function `find`. If an error occurs, it returns `None`.
+            The result of the function `find`.
+             If an error occurs, it returns `None`.
         """
         try:
             return self.client[self.database_name][str(collection)].find(query)
@@ -57,15 +54,15 @@ class ApiMongoDB:
 
     def __insert_element(self, collection: DBCollections, document: dict) -> results.InsertOneResult | None:
         """
-        Insert an element in a collection of the database.
-        If an error occurs, it returns `None`.
+        Inserts an element in a collection of the database.
 
         Args:
-            collection: it states which collection the function is using.
-            document: the data to insert.
+            collection: The collection of the database.
+            document: The data to insert.
 
         Returns:
-            the result of the function "insert_one". If an error occurs, it returns "None".
+            The result of the function `insert_one`.
+            If an error occurs, it returns `None`.
         """
         try:
             return self.client[self.database_name][str(collection)].insert_one(document)
@@ -73,37 +70,38 @@ class ApiMongoDB:
             print(error)
             return None
 
-    def __update_element(self, collection: DBCollections, query: dict,
-                         new_data: dict) -> results.UpdateResult | None:
+    def __update_element(self, collection: DBCollections, query: dict, new_data: dict) -> results.UpdateResult | None:
         """
-        Update an element in a collection of the database. The element is the first document that matches with `query`.
-        If an error occurs, it returns `None`.
+        Updates an element in a collection of the database.
+        The updated element is the first document that matches with `query`.
 
         Args:
-            collection: it states which collection the function is using.
-            query: the query.
-            new_data: the data to insert. If a data exists, it updates the old data.
+            collection: The collection of the database.
+            query: The query.
+            new_data: The data to insert. If a data exists, it updates the old data.
 
         Returns:
-            the result of the function "update_one". If an error occurs, it returns "None".
+            The result of the function `update_one`.
+            If an error occurs, it returns `None`.
         """
         try:
-            return self.client[self.database_name][str(collection)].update_one(query, new_data)
+            return self.client[self.database_name][str(collection)].update_one(query, {"$set": new_data})
         except Exception as error:
             print(error)
             return None
 
     def __delete_element(self, collection: DBCollections, query: dict) -> results.DeleteResult | None:
         """
-        Delete an element from a collection of the database. The element is the first document that matches with
-        `query`. If an error occurs, it returns `None`.
+        Deletes an element from a collection of the database.
+        The deleted element is the first document that matches with `query`.
 
         Args:
-            collection: it states which collection the function is using.
-            query: the query.
+            collection: The collection of the database.
+            query: The query.
 
         Returns:
-            the result of the function "delete_one". If an error occurs, it returns "None".
+            The result of the function `delete_one`.
+            If an error occurs, it returns `None`.
         """
         try:
             return self.client[self.database_name][str(collection)].delete_one(query)
@@ -111,82 +109,159 @@ class ApiMongoDB:
             print(error)
             return None
 
-    # Public API
-    # Config file API
-    def get_config(self) -> any:
+    def __get_clan(self, key: str, value: str) -> dict:
         """
-        Get the configuration file.
+        Returns the clan data of the clan that `key` matches with `value`.
+
+        Args:
+            key: the dictionary's key.
+            value: The key's value.
 
         Returns:
-            the result of the function "__get_element".
+            The clan data.
+            If an error occurs, it returns an empty dictionary.
         """
-        return self.__get_element(DBCollections.CONFIG, {'_id': ObjectId(get_config_id())})
+        result = self.__get_element(DBCollections.CLANS, {key: value})
+        if result:
+            return result
+        else:
+            return {}
+
+    def get_clans(self, key: str, value: str) -> list:
+        """
+        Return the clans' data of the clans that the value of `key` contains `value`.
+
+        Args:
+            key: The dictionary's key.
+            value: The key's value.
+
+        Returns:
+            A list of clans.
+            If no clan was found, it returns an empty list.
+        """
+        result = self.__get_elements(DBCollections.CLANS, {key: {'$regex': value, '$options': 'i'}})
+        if result:
+            return list(result)
+        else:
+            return []
+
+    ####################################################################################################################
+    #                                                 PUBLIC API                                                       #
+    ####################################################################################################################
+
+    ####################################################################################################################
+    #                                                Config file API                                                   #
+    ####################################################################################################################
+    def get_config(self) -> dict | None:
+        """
+        Gets the configuration file.
+
+        Returns:
+            The configuration file.
+        """
+        return self.__get_element(DBCollections.CONFIG, {"_id": ObjectId(get_config_id())})
 
     def update_config(self, config_data: dict) -> results.UpdateResult | None:
         """
-        Update the configuration file.
+        Updates the configuration file.
 
         Args:
-            config_data: the data to insert. If a data exists, it updates the old data.
+            config_data: The new data to insert. If a key exists, it updates the old data.
 
         Returns:
-            the result of the function "__update_element".
+            The updated result.
+            If an error occurs, it returns `None`.
         """
-        return self.__update_element(
-            DBCollections.CONFIG, {'_id': ObjectId(get_config_id())}, {'$set': config_data})
+        return self.__update_element(DBCollections.CONFIG, {"_id": ObjectId(get_config_id())}, {"$set": config_data})
 
-    # Clans Collection API
-    def get_clan_by_id(self, clan_id: str) -> any:
+    ####################################################################################################################
+    #                                              Clans Collection API                                                #
+    ####################################################################################################################
+    def get_clan_by_id(self, clan_id: str) -> dict:
         """
-        Return the clan data of the clan that player_id matches with `clan_id`.
+        Returns the clan data of the clan that clan's id matches with `clan_id`.
 
         Args:
-            clan_id: the clan player_id.
+            clan_id: The clan id.
 
         Returns:
-            the result of the function "__get_element". If no clan was found, it returns "None".
+            The clan data.
+            If an error occurs, it returns an empty dictionary.
         """
-        return self.__get_element(DBCollections.CLANS, {'id': clan_id})
+        return self.__get_clan("id", clan_id)
 
-    def get_clans_by_tag(self, clan_tag: str) -> list | None:
+    def get_clan_by_tag(self, clan_tag: str) -> dict:
         """
-        Return the clans' data of the clans that tag contains `clan_tag`.
+        Returns the clan data of the clan that clan's tag matches with `clan_tag`.
 
         Args:
-            clan_tag: the clan tag.
+            clan_tag: The clan tag.
 
         Returns:
-            the result of the function "__get_elements" cast to a "list". If no clan was found, it returns "None".
+            The clan data.
+            If an error occurs, it returns an empty dictionary.
         """
-        x = self.__get_elements(DBCollections.CLANS, {'tag': {'$regex': clan_tag, '$options': 'i'}})
-        if x:
-            return list(x)
-        else:
-            return None
+        return self.__get_clan("tag", clan_tag)
 
-    def get_clans_by_name(self, clan_name: str) -> list | None:
+    def get_clan_by_name(self, clan_name: str) -> dict:
         """
-        Return the clans' data of the clans that name contains `clan_tag`.
+        Returns the clan data of the clan that clan's name matches with `clan_name`.
 
         Args:
-            clan_name: the clan name.
+            clan_name: The clan name.
 
         Returns:
-            the result of the function "__get_elements" cast to a "list". If no clan was found, it returns "None".
+            The clan data.
+            If an error occurs, it returns an empty dictionary.
         """
-        x = self.__get_elements(DBCollections.CLANS, {'name': {'$regex': clan_name, '$options': 'i'}})
-        if x:
-            return list(x)
-        else:
-            return None
+        return self.__get_clan("name", clan_name)
+
+    def get_clans_by_id(self, clan_id: str) -> list:
+        """
+        Returns the clans' data of the clans that id contains `clan_id`.
+
+        Args:
+            clan_id: The clan id.
+
+        Returns:
+            A list of clans.
+            If no clan was found, it returns an empty list.
+        """
+        return self.get_clans("id", clan_id)
+
+    def get_clans_by_tag(self, clan_tag: str) -> list:
+        """
+        Returns the clans' data of the clans that tag contains `clan_id`.
+
+        Args:
+            clan_tag: The clan tag.
+
+        Returns:
+            A list of clans.
+            If no clan was found, it returns an empty list.
+        """
+        return self.get_clans("tag", clan_tag)
+
+    def get_clans_by_name(self, clan_name: str) -> list:
+        """
+        Returns the clans' data of the clans that name contains `clan_name`.
+
+        Args:
+            clan_name: The clan name.
+
+        Returns:
+            A list of clans.
+            If no clan was found, it returns an empty list.
+        """
+        return self.get_clans("name", clan_name)
 
     def insert_clan(self, clan_info: dict) -> results.InsertOneResult | None:
         """
-        Insert a clan in the collection.
+        Inserts a clan in the collection.
 
         Args:
-            clan_info: the data of the clan. It has an "id" (str), a "tag" (str), a "name" (str) and a
-             "representations" (list[str]). "representations" is a list of 2 strings.
+            clan_info: The data of the clan. It has an "id" (str), a "tag" (str), a "name" (str) and a "representations"
+             (list[str]). "representations" is a list of 2 strings.
 
         Returns:
             the result of the function "__insert_element".
@@ -225,7 +300,7 @@ class ApiMongoDB:
         Returns:
             the result of the function "__update_element".
         """
-        return self.__update_element(DBCollections.CLANS, {'player_id': clan_id}, clan_data)
+        return self.__update_element(DBCollections.CLANS, {'id': clan_id}, clan_data)
 
     def delete_clan(self, clan_id: str) -> results.DeleteResult | None:
         """
@@ -237,29 +312,47 @@ class ApiMongoDB:
         Returns:
             the result of the function "__delete_element".
         """
-        return self.__delete_element(DBCollections.CLANS, {'player_id': clan_id})
+        return self.__delete_element(DBCollections.CLANS, {'id': clan_id})
 
-    def get_player(self, discord_id: str = "", wows_id: str = "") -> list | None:
-        query = {'$or': [
-            {'discord': discord_id},
-            {'wows': wows_id}
-        ]}
+    # Player Collection
+    def get_player(self, discord_id: str = "", wows_id: str = "") -> dict | None:
+        """
+        Returns the player's data that discord's id or wows' id matches with `discord_id` or `wows_id`.
+        If nothing is matched, it returns `None`.
+
+        Args:
+            discord_id: the discord's id.
+            wows_id: the wows' id.
+
+        Returns:
+            the result of the function "__delete_element".
+        """
+        query = {
+            '$or': [
+                {'discord': discord_id},
+                {'wows': wows_id}
+            ]
+        }
         x = self.__get_elements(DBCollections.PLAYERS, query)
         if x:
-            return list(x)
+            return list(x)[0]
         else:
             return None
 
-    def insert_player(
-        self,
-        discord_id: str,
-        wows_id: str,
-        token: str,
-        expire: str
-    ) -> results.InsertOneResult | None:
+    def insert_player(self, discord_id: str, wows_id: str, token: str, expire: str) -> results.InsertOneResult | None:
+        """
+        Search and return a player that discord's id or wows' id matches with the arguments.
+        If nothing is matched, it returns `None`.
+
+        Args:
+            discord_id: the discord's id.
+            wows_id: the wows' id.
+
+        Returns:
+            the result of the function "__delete_element".
+        """
         player = self.get_player(discord_id, wows_id)
         if player:
-            player = player[0]
             if player["discord_id"] == discord_id:
                 print("Discord ID is already in the DB.")
             elif player["wows_id"] == wows_id:

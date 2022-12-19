@@ -1,10 +1,11 @@
 import sys
 import asyncio
 import datetime
+import re
 from typing import Union
 
 import requests
-from disnake import ApplicationCommandInteraction, ModalInteraction
+from disnake import ApplicationCommandInteraction, ModalInteraction, errors
 
 from utils.constants import CONFIG_ID
 from models.my_enum.roles_enum import RolesEnum
@@ -92,3 +93,30 @@ def is_debugging() -> bool:
         return False
     else:
         return True
+
+
+async def logout(inter: ApplicationCommandInteraction, mongo) -> None:
+    await inter.response.defer()
+    deleted_player = mongo.delete_player(str(inter.author.id))
+    try:
+        if deleted_player.deleted_count == 1:
+            # Remove role, restore nickname and clean DB
+            await inter.author.remove_roles(inter.guild.get_role(int(RolesEnum.AUTH)))
+            await inter.author.remove_roles(inter.guild.get_role(int(RolesEnum.REP)))
+            try:
+                clan_tag = re.search(r"\[.+]", inter.author.display_name).group(0)[1:-1]
+                clan = mongo.get_clans_by_tag(clan_tag)[0]
+                representations = clan["representations"]
+                representations.remove(str(inter.author.id))
+                mongo.update_clan(clan["id"], {"representations": representations})
+            except AttributeError:
+                pass
+            try:
+                await inter.author.edit(nick=None)
+            except errors.Forbidden:
+                pass
+            await inter.send("Logout effettuato con successo.")
+        else:
+            raise AttributeError
+    except AttributeError:
+        await inter.send("Logout non effettuato.")
