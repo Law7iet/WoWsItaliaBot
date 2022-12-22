@@ -52,9 +52,9 @@ Informazioni ulteriori **non verranno utilizzati**.
         await inter.response.defer()
         # Get player info
         try:
-            data = self.api_mongo_db.get_player(discord_id=str(inter.author.id))
+            data = self.api_mongo_db.get_player_by_discord(str(inter.author.id))
             player_id = data["wows"]
-        except TypeError:
+        except (TypeError, KeyError):
             await inter.send("Non hai effettuato l'autenticazione. Digita `/auth`")
             return
 

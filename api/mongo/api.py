@@ -1,7 +1,7 @@
 # Documentation: https://www.mongodb.com/languages/python
 
 from bson import ObjectId
-from pymongo import MongoClient, cursor, results
+from pymongo import MongoClient, cursor, results, errors
 
 from models.my_enum.database_enum import DBCollections
 from utils.functions import get_config_id
@@ -10,13 +10,17 @@ from utils.functions import get_config_id
 class ApiMongoDB:
     def __init__(self):
         self.database_name = "WoWsItaliaDB"
-        self.client = MongoClient()
+        try:
+            self.client = MongoClient(serverSelectionTimeoutMS=10)
+            self.client.server_info()
+        except (errors.ConnectionFailure, errors.ServerSelectionTimeoutError):
+            raise Exception("Database non connesso")
 
     ####################################################################################################################
-    #                                                PRIVATE API                                                       #
+    #                                                   PRIVATE API                                                    #
     ####################################################################################################################
     # Parametric API to mongo
-    def __get_element(self, collection: DBCollections, query: dict) -> any:
+    def __get_element(self, collection: DBCollections, query: dict) -> dict:
         """
         Gets an element which matches with `query` from a collection of the database.
 
@@ -25,16 +29,16 @@ class ApiMongoDB:
             query: The query.
 
         Returns:
-            The result of the function `find_one`.
-             If an error occurs, it returns `None`.
+            A dictionary represents the result of the function `find_one`.
+             If an error occurs, it returns an empty dictionary.
         """
         try:
             return self.client[self.database_name][str(collection)].find_one(query)
         except Exception as error:
-            print(error)
-            return None
+            print(f"Error: Mongo __get_element({DBCollections}, {query})\n{error}")
+            return {}
 
-    def __get_elements(self, collection: DBCollections, query: dict) -> cursor.Cursor | None:
+    def __get_elements(self, collection: DBCollections, query: dict) -> list:
         """
         Gets the elements which match with `query` from a collection of the database.
 
@@ -43,16 +47,16 @@ class ApiMongoDB:
             query: The query.
 
         Returns:
-            The result of the function `find`.
-             If an error occurs, it returns `None`.
+            A list of elements.
+             If an error occurs, it returns an empty list.
         """
         try:
-            return self.client[self.database_name][str(collection)].find(query)
+            return list(self.client[self.database_name][str(collection)].find(query))
         except Exception as error:
-            print(error)
-            return None
+            print(f"Error: Mongo __get_elements({DBCollections}, {query})\n{error}")
+            return []
 
-    def __insert_element(self, collection: DBCollections, document: dict) -> results.InsertOneResult | None:
+    def __insert_element(self, collection: DBCollections, document: dict) -> dict:
         """
         Inserts an element in a collection of the database.
 
@@ -61,16 +65,25 @@ class ApiMongoDB:
             document: The data to insert.
 
         Returns:
-            The result of the function `insert_one`.
-             If an error occurs, it returns `None`.
+            The inserted document.
+             If an error occurs or if the document is not inserted, it returns an empty dictionary.
         """
         try:
-            return self.client[self.database_name][str(collection)].insert_one(document)
+            insertedDocument = self.client[self.database_name][str(collection)].insert_one(document)
+            document["_id"] = insertedDocument.inserted_id
+            return document
+        except errors.DuplicateKeyError:
+            print(f"Error: Mongo __insert_element({DBCollections}, {document})\nDuplicated Key")
+        except errors.WriteError as error:
+            if error.code == 121:
+                print(f"Error: Mongo __insert_element({DBCollections}, {document})\nInvalid schema")
+            else:
+                print(f"Error: Mongo __insert_element({DBCollections}, {document})\n{error}")
         except Exception as error:
-            print(error)
-            return None
+            print(f"Error: Mongo __insert_element({DBCollections}, {document})\n{error}")
+        return {}
 
-    def __update_element(self, collection: DBCollections, query: dict, new_data: dict) -> results.UpdateResult | None:
+    def __update_element(self, collection: DBCollections, query: dict, new_data: dict) -> dict:
         """
         Updates an element in a collection of the database.
         The updated element is the first document that matches with `query`.
@@ -81,16 +94,46 @@ class ApiMongoDB:
             new_data: The data to insert. If a data exists, it updates the old data.
 
         Returns:
-            The result of the function `update_one`.
-             If an error occurs, it returns `None`.
+            The updated document.
+             If an error occurs or if the document is not found, it returns an empty
+             dictionary.
         """
         try:
-            return self.client[self.database_name][str(collection)].update_one(query, {"$set": new_data})
+            elementToUpdate = self.client[self.database_name][str(collection)].find_one(query)
+            updatedResult = self.client[self.database_name][str(collection)].update_one(query, new_data)
+            match updatedResult.matched_count:
+                case 0:
+                    if updatedResult.modified_count == 0:
+                        return {}
+                    else:
+                        msg = f"matched_count is 0 but modified_count is not 0, it's {updatedResult.modified_count}"
+                        raise Exception(msg)
+                case 1:
+                    return elementToUpdate | new_data
+                case _:
+                    msg = f"Warning: Mongo __update_element({DBCollections}, {query}, {new_data})\n"
+                    msg = msg + f"Matched count is higher than 1, it's {updatedResult.matched_count}"
+                    print(msg)
+                    if updatedResult.modified_count == 1:
+                        return elementToUpdate | new_data
+                    else:
+                        msg = f"matched_count is {updatedResult.matched_count} but modified_count is not 0, "
+                        msg = msg + f"it's {updatedResult.modified_count}"
+                        raise Exception(msg)
+        except errors.WriteError as error:
+            match error.code:
+                case 66:
+                    print(f"Error: Mongo __update_element({DBCollections}, {query}, {new_data})\nUpdate immutable _id")
+                case 121:
+                    print(f"Error: Mongo __update_element({DBCollections}, {query}, {new_data})\nInvalid schema")
+                case _:
+                    print(f"Error: Mongo __update_element({DBCollections}, {query}, {new_data})\n{error}")
+            return {}
         except Exception as error:
-            print(error)
-            return None
+            print(f"Error: Mongo __update_element({DBCollections}, {query}, {new_data})\n{error}")
+            return {}
 
-    def __delete_element(self, collection: DBCollections, query: dict) -> results.DeleteResult | None:
+    def __delete_element(self, collection: DBCollections, query: dict) -> dict:
         """
         Deletes an element from a collection of the database.
         The deleted element is the first document that matches with `query`.
@@ -100,14 +143,22 @@ class ApiMongoDB:
             query: The query.
 
         Returns:
-            The result of the function `delete_one`.
-             If an error occurs, it returns `None`.
+            The deleted document.
+             If an error occurs, or if the document is not found it returns an empty dictionary.
         """
         try:
-            return self.client[self.database_name][str(collection)].delete_one(query)
+            elementToDelete = self.client[self.database_name][str(collection)].find_one(query)
+            deletedResult = self.client[self.database_name][str(collection)].delete_one(query)
+            if deletedResult.deleted_count == 0:
+                return {}
+            elif deletedResult.deleted_count == 1:
+                return elementToDelete
+            else:
+                msg = f"Warning: Mongo __delete_element({DBCollections}, {query})"
+                raise Exception(msg + f"\nMatched count {deletedResult.deleted_count}")
         except Exception as error:
             print(error)
-            return None
+            return {}
 
     def __get_clan(self, key: str, value: str) -> dict:
         """
@@ -121,11 +172,7 @@ class ApiMongoDB:
             The clan's data.
              If an error occurs or if no clan is found, it returns an empty dictionary.
         """
-        result = self.__get_element(DBCollections.CLANS, {key: value})
-        if result:
-            return result
-        else:
-            return {}
+        return self.__get_element(DBCollections.CLANS, {key: value})
 
     def __get_clans(self, key: str, value: str) -> list:
         """
@@ -139,11 +186,7 @@ class ApiMongoDB:
             A list of clans.
              If no clan is found, it returns an empty list.
         """
-        result = self.__get_elements(DBCollections.CLANS, {key: {'$regex': value, '$options': 'i'}})
-        if result:
-            return list(result)
-        else:
-            return []
+        return self.__get_elements(DBCollections.CLANS, {key: {'$regex': value, '$options': 'i'}})
 
     def __get_player(self, query: dict) -> dict:
         """
@@ -156,20 +199,16 @@ class ApiMongoDB:
             The player data.
              If an error occurs or if no player is found, it returns an empty dictionary.
         """
-        player = self.__get_element(DBCollections.PLAYERS, query)
-        if player:
-            return player
-        else:
-            return {}
+        return self.__get_element(DBCollections.PLAYERS, query)
 
     ####################################################################################################################
-    #                                                 PUBLIC API                                                       #
+    #                                                    PUBLIC API                                                    #
     ####################################################################################################################
 
     ####################################################################################################################
-    #                                                Config file API                                                   #
+    #                                                 Config file API                                                  #
     ####################################################################################################################
-    def get_config(self) -> dict | None:
+    def get_config(self) -> dict:
         """
         Gets the configuration file.
 
@@ -178,7 +217,7 @@ class ApiMongoDB:
         """
         return self.__get_element(DBCollections.CONFIG, {"_id": ObjectId(get_config_id())})
 
-    def update_config(self, config_data: dict) -> results.UpdateResult | None:
+    def update_config(self, config_data: dict) -> dict:
         """
         Updates the configuration file.
 
@@ -187,12 +226,12 @@ class ApiMongoDB:
 
         Returns:
             The updated result.
-             If an error occurs, it returns `None`.
+             If an error occurs, it returns an empty dictionary.
         """
         return self.__update_element(DBCollections.CONFIG, {"_id": ObjectId(get_config_id())}, {"$set": config_data})
 
     ####################################################################################################################
-    #                                              Clans Collection API                                                #
+    #                                             Clans Collection API                                                 #
     ####################################################################################################################
     def get_clan_by_id(self, clan_id: str) -> dict:
         """
@@ -203,7 +242,7 @@ class ApiMongoDB:
 
         Returns:
             The clan's data.
-             If an error occurs, it returns an empty dictionary.
+             If the clan is not found or if an error occurs, it returns an empty dictionary.
         """
         return self.__get_clan("id", clan_id)
 
@@ -216,7 +255,7 @@ class ApiMongoDB:
 
         Returns:
             The clan's data.
-             If an error occurs, it returns an empty dictionary.
+             If the clan is not found or if an error occurs, it returns an empty dictionary.
         """
         return self.__get_clan("tag", clan_tag)
 
@@ -229,7 +268,7 @@ class ApiMongoDB:
 
         Returns:
             The clan's data.
-             If an error occurs, it returns an empty dictionary.
+             If the clan is not found or if an error occurs, it returns an empty dictionary.
         """
         return self.__get_clan("name", clan_name)
 
@@ -242,7 +281,7 @@ class ApiMongoDB:
 
         Returns:
             A list of clans.
-             If no clan is found, it returns an empty list.
+             If no clan is found or if an error occurs, it returns an empty dictionary.
         """
         return self.__get_clans("id", clan_id)
 
@@ -255,7 +294,7 @@ class ApiMongoDB:
 
         Returns:
             A list of clans.
-             If no clan is found, it returns an empty list.
+             If no clan is found or if an error occurs, it returns an empty dictionary.
         """
         return self.__get_clans("tag", clan_tag)
 
@@ -268,11 +307,11 @@ class ApiMongoDB:
 
         Returns:
             A list of clans.
-             If no clan is found, it returns an empty list.
+             If no clan is found or if an error occurs, it returns an empty dictionary.
         """
         return self.__get_clans("name", clan_name)
 
-    def insert_clan(self, clan_info: dict) -> results.InsertOneResult | None:
+    def insert_clan(self, clan_info: dict) -> dict:
         """
         Inserts a clan in the collection.
 
@@ -280,8 +319,8 @@ class ApiMongoDB:
             clan_info: The data of the clan.
 
         Returns:
-            The result of the function `__insert_element`.
-             If an error occurs, or if the clan is already stored, it returns `None`.
+            The inserted clan with its `_id`.
+             If the clan is already stored or if an error occurs, it returns an empty dictionary.
         """
         if not self.get_clan_by_id(str(clan_info["id"])):
             representations = []
@@ -301,8 +340,10 @@ class ApiMongoDB:
                     "tag": str(clan_info["tag"]),
                     "representations": representations
                 })
+        else:
+            return {}
 
-    def update_clan_by_id(self, clan_id: str, clan_data: dict) -> results.UpdateResult | None:
+    def update_clan_by_id(self, clan_id: str, clan_data: dict) -> dict:
         """
         Updates the clan's data.
         The clan to update is the clan that its id matches with `clan_id`.
@@ -312,12 +353,12 @@ class ApiMongoDB:
             clan_data: The clan's data to update. If a data doesn't exist, it inserts the new data.
 
         Returns:
-            The result of the function `__update_element`.
-             If an error occurs, it returns `None`.
+            The updated clan.
+             If the clan is not found or if an error occurs, it returns an empty dictionary.
         """
         return self.__update_element(DBCollections.CLANS, {"id": clan_id}, clan_data)
 
-    def delete_clan_by_id(self, clan_id: str) -> results.DeleteResult | None:
+    def delete_clan_by_id(self, clan_id: str) -> dict:
         """
         Deletes a clan from the collection.
         The clan to delete is the clan that its id matches with `clan_id`.
@@ -326,12 +367,13 @@ class ApiMongoDB:
             clan_id: The clan's id.
 
         Returns:
-            The result of the function `__delete_element`.
+            The deleted clan.
+             If the clan is not found or if an error occurs, it returns an empty dictionary.
         """
         return self.__delete_element(DBCollections.CLANS, {"id": clan_id})
 
     ####################################################################################################################
-    #                                             Player Collection API                                                #
+    #                                              Player Collection API                                               #
     ####################################################################################################################
     def get_player(self, discord_id: str, wows_id: str) -> dict:
         """
@@ -343,15 +385,9 @@ class ApiMongoDB:
 
         Returns:
             The player data.
-             If no player is found, it returns an empty dictionary.
+             If the player is not found or if an error occurs, it returns an empty dictionary.
         """
-        if discord_id and wows_id:
-            return self.__get_player({"$and": [
-                {"discord": discord_id},
-                {"wows": wows_id}
-            ]})
-        else:
-            return {}
+        return self.__get_player({"$and": [{"discord": discord_id}, {"wows": wows_id}]})
 
     def get_player_by_discord(self, discord_id: str) -> dict:
         """
@@ -362,7 +398,7 @@ class ApiMongoDB:
 
         Returns:
             The player data.
-             If no player is found, it returns an empty dictionary.
+             If the player is not found or if an error occurs, it returns an empty dictionary.
         """
         return self.__get_player({"discord": discord_id})
 
@@ -375,17 +411,11 @@ class ApiMongoDB:
 
         Returns:
             The player data.
-             If no player is found, it returns an empty dictionary.
+             If the player is not found or if an error occurs, it returns an empty dictionary.
         """
         return self.__get_player({"wows": wows_id})
 
-    def insert_player(
-            self,
-            discord_id: str,
-            wows_id: str,
-            token: str = "",
-            expire: str = ""
-    ) -> results.InsertOneResult | None:
+    def insert_player(self, discord_id: str, wows_id: str, token: str = "", expire: str = "") -> dict:
         """
         Inserts a player in the collection.
 
@@ -396,12 +426,12 @@ class ApiMongoDB:
             expire: The date of the token's expire.
 
         Returns:
-            The result of the function `__insert_element`.
-            If an error occurs, or if the player is already stored, it returns `None`.
+            The inserted player.
+             If the player is already stored or if an error occurs, it returns an empty dictionary.
         """
         player = self.get_player(discord_id, wows_id)
         if not player:
-            inserted_player = self.__insert_element(
+            return self.__insert_element(
                 DBCollections.PLAYERS,
                 {
                     "discord": discord_id,
@@ -410,11 +440,10 @@ class ApiMongoDB:
                     "expire": expire
                 }
             )
-            if inserted_player:
-                if inserted_player.inserted_id:
-                    return inserted_player
+        else:
+            return {}
 
-    def update_player(self, discord_id: str, player_data: dict) -> results.UpdateResult | None:
+    def update_player(self, discord_id: str, player_data: dict) -> dict:
         """
         Updates the player's data.
         The player to update is the player that its Discord's id matches with `discord_id`.
@@ -424,12 +453,12 @@ class ApiMongoDB:
             player_data: The player's data to update. If a data doesn't exist, it inserts the new data.
 
         Returns:
-            The result of the function `__update_element`.
-             If an error occurs, it returns `None`.
+            The inserted player.
+             If the player is not found or if an error occurs, it returns an empty dictionary.
         """
         return self.__update_element(DBCollections.PLAYERS, {"discord": discord_id}, player_data)
 
-    def delete_player(self, discord_id: str = "", wows_id: str = "") -> results.DeleteResult | None:
+    def delete_player(self, discord_id: str = "", wows_id: str = "") -> dict:
         """
         Deletes a player from the collection.
         The player to delete is the player that its Discord's and WoWs' id matches with `discord_id` and `clan_id`.
@@ -439,7 +468,8 @@ class ApiMongoDB:
             wows_id: The WoWs' id of the player.
 
         Returns:
-            The result of the function `__delete_element`.
+            The deleted player.
+             If the player is not found or if an error occurs, it returns an empty dictionary.
         """
         return self.__delete_element(
             DBCollections.PLAYERS,
@@ -448,5 +478,3 @@ class ApiMongoDB:
                 {'wows': wows_id}
             ]}
         )
-
-    # TODO: Change return value of update (update nothing, insert new data) and delete (delete nothing)

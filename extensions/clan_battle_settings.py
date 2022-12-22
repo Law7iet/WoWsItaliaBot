@@ -53,19 +53,18 @@ class ClanBattleSettings(commands.Cog):
             await inter.send("Non hai i permessi")
             return
         try:
+            msg = "Errore durante l'impostazione della stagione. Controllare il terminale e/o log."
             value = int(season)
             if value <= 0:
                 return
-            data = {str(ConfigKeys.CB_CURRENT_SEASON): value}
-            result = self.api_mongo_db.update_config(data)
-            if result.matched_count == 1:
-                await send_response_and_clear(inter, False, 'Impostato la stagione: `' + str(value) + '`.')
+            data = {"clan_battle_info": {str(ConfigKeys.CB_CURRENT_SEASON): value}}
+            if self.api_mongo_db.update_config(data):
+                await inter.send('Impostato la stagione: `' + str(value) + '`.')
             else:
-                raise Exception(result)
+                await inter.send(msg)
         except Exception as error:
-            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send('**>set_season command exception**')
-            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send('```' + str(error) + '```')
-            await inter.send("Errore")
+            print(f"set-season exception says: {error}")
+            await inter.send(msg)
 
     @clan_battle.sub_command(name="set-days", description="Imposta i giorni delle clan battle: AAAA-MM-GG")
     async def set_days(self, inter: ApplicationCommandInteraction, start_date: str, end_date: str):
@@ -78,14 +77,26 @@ class ClanBattleSettings(commands.Cog):
             # Check integrity
             start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]))
             end = datetime.datetime(int(end[0]), int(end[1]), int(end[2]))
-            data1 = {str(ConfigKeys.CB_STARTING_DAY): start.strftime('%Y-%m-%d')}
-            data2 = {str(ConfigKeys.CB_ENDING_DAY): end.strftime('%Y-%m-%d')}
-            self.api_mongo_db.update_config(data1)
-            self.api_mongo_db.update_config(data2)
-            await inter.send("Impostato le date `" + start_date + "` e `" + end_date + "`.")
         except Exception as error:
             print(error)
             await inter.send("Errore. Sintassi: AAAA-MM-GG AAAA-MM-GG")
+            return
+        else:
+            data1 = {"clan_battle_info": {str(ConfigKeys.CB_STARTING_DAY): start.strftime('%Y-%m-%d')}}
+            data2 = {"clan_battle_info": {str(ConfigKeys.CB_ENDING_DAY): end.strftime('%Y-%m-%d')}}
+            res1 = self.api_mongo_db.update_config(data1)
+            res2 = self.api_mongo_db.update_config(data2)
+            msg = "Controllare il terminale e/o log."
+            if res1 and res2:
+                await inter.send("Impostato le date `" + start_date + "` e `" + end_date + "`.")
+            elif res1:
+                await inter.send("Impostato la data di inizio clan battle `" + start_date + "`.")
+                await inter.channel.send("Errore durante l'impostazione della data di fine clan battle. " + msg)
+            elif res2:
+                await inter.send("Impostato la data di fine clan battle `" + end_date + "`.")
+                await inter.channel.send("Errore durante l'impostazione della data di inizio clan battle. " + msg)
+            else:
+                await inter.send("Errore durante l'impostazione delle date delle clan battle." + msg)
 
 
 def setup(bot):

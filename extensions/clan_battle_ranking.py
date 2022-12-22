@@ -20,7 +20,7 @@ class ClanBattleRanking(commands.Cog):
         self.api_mongo = ApiMongoDB()
         self.debugging = is_debugging()
 
-    def my_rank(self) -> list[list[[]]]:
+    def my_rank(self, config: dict) -> list[list[[]]]:
         # Each element represent a league.
         # The leagues are Hurricane, Typhoon, Storm, Gale and Squall
         # Each league has 3 divisions
@@ -29,7 +29,7 @@ class ClanBattleRanking(commands.Cog):
         for italian_clan in self.api_mongo.get_clans_by_name(''):
             data = cb_ranking(int(italian_clan['id']), self.debugging)
             for element in data:
-                if str(element['season_number']) == str(self.api_mongo.get_config()[str(ConfigKeys.CB_CURRENT_SEASON)]):
+                if str(element['season_number']) == str(config[str(ConfigKeys.CB_CURRENT_SEASON)]):
                     promotion = []
                     # Compute squad (str)
                     match element['team_number']:
@@ -84,7 +84,8 @@ class ClanBattleRanking(commands.Cog):
             return
         try:
             await inter.response.defer()
-            x = self.my_rank()
+            mongo_config = self.api_mongo.get_config()["clan_battle_info"]
+            x = self.my_rank(mongo_config)
             pos = 1
             league_index = 0
             if self.debugging:
@@ -93,7 +94,6 @@ class ClanBattleRanking(commands.Cog):
                 channel = self.bot.get_channel(int(ChannelsEnum.TXT_CLASSIFICA_CB))
             message_list = []
             # Compute the progressive day of CB
-            mongo_config = self.api_mongo.get_config()
             start = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_STARTING_DAY)])
             end = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_ENDING_DAY)])
             today = (datetime.datetime.now() + datetime.timedelta(days=1)).date()
@@ -159,9 +159,9 @@ class ClanBattleRanking(commands.Cog):
             await send_response_and_clear(inter, True, "Fatto!")
 
         except Exception as error:
-            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send('**>ranking command exception**')
-            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send('```' + str(error) + '```')
-            await send_response_and_clear(inter, True, "Errore :(")
+            print(f"classifica exception says: {error}")
+            msg = "Errore durante la generazione della classifica. Controllare il terminale e/o log."
+            await inter.send(msg)
 
 
 def setup(bot):

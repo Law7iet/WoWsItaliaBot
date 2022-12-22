@@ -19,9 +19,8 @@ class Moderation(commands.Cog):
 
     async def check_player(self, inter: ApplicationCommandInteraction, member: Member, clan_id: str) -> bool:
         if inter.guild.get_role(int(RolesEnum.AUTH)) in member.roles:
-            try:
-                player = self.mongo_api.get_player(str(member.id))
-            except TypeError:
+            player = self.mongo_api.get_player_by_discord(str(member.id))
+            if not player:
                 # This should never happen: an authenticated player is not found in the db
                 await inter.send("<@" + str(member.id) + "> non è nel db.")
                 return False
@@ -106,7 +105,7 @@ class Moderation(commands.Cog):
                 msg = msg + "Rappresentante: <@" + str(rappresentante_2.id) + ">"
             await inter.send(msg)
         else:
-            await inter.send("Clan non inserito.")
+            await inter.send("Clan non inserito. Controllare che il clan non sia già inserito e il terminale e/o log.")
 
 
 def setup(bot):
