@@ -18,17 +18,16 @@ EventOptions = commands.option_enum({
 class ClanBattleSettings(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.api_mongo_db = ApiMongoDB()
+        self.api_mongo = ApiMongoDB()
 
     async def getter(self, config_key: ConfigKeys) -> dict:
-        config_file = self.api_mongo_db.get_config()
+        config_file = self.api_mongo.get_config()
         return config_file["clan_battle_info"][str(config_key)]
 
-    @commands.slash_command(name="clan-battle")
-    async def clan_battle(self, inter: ApplicationCommandInteraction) -> None:
-        pass
-
-    @clan_battle.sub_command(name="get-season", description="Ritorna il numero della stagione delle clan battle.")
+    @commands.slash_command(
+        name="clan-battle-get-season",
+        description="Ritorna il numero della stagione delle clan battle."
+    )
     async def get_season(self, inter: ApplicationCommandInteraction) -> None:
         value = await self.getter(ConfigKeys.CB_CURRENT_SEASON)
         if value:
@@ -36,7 +35,7 @@ class ClanBattleSettings(commands.Cog):
         else:
             await inter.send('Valore incorretto: `' + str(value) + '`.')
 
-    @clan_battle.sub_command(name="get-days", description="Ritorna le date delle clan battle")
+    @commands.slash_command(name="clan-battle-get-days", description="Ritorna le date delle clan battle")
     async def get_days(self, inter: ApplicationCommandInteraction) -> None:
         start = await self.getter(ConfigKeys.CB_STARTING_DAY)
         end = await self.getter(ConfigKeys.CB_ENDING_DAY)
@@ -47,7 +46,10 @@ class ClanBattleSettings(commands.Cog):
         elif not end:
             await inter.send('Data di fine vuota: : `' + str(end) + '`.')
 
-    @clan_battle.sub_command(name="set-season", description="Imposta il numero della stagione delle clan battle")
+    @commands.slash_command(
+        name="clan-battle-set-season",
+        description="Imposta il numero della stagione delle clan battle"
+    )
     async def set_season(self, inter: ApplicationCommandInteraction, season: str):
         if not await check_role(inter, RolesEnum.ADMIN):
             await inter.send("Non hai i permessi")
@@ -58,7 +60,7 @@ class ClanBattleSettings(commands.Cog):
             if value <= 0:
                 return
             data = {"clan_battle_info": {str(ConfigKeys.CB_CURRENT_SEASON): value}}
-            if self.api_mongo_db.update_config(data):
+            if self.api_mongo.update_config(data):
                 await inter.send('Impostato la stagione: `' + str(value) + '`.')
             else:
                 await inter.send(msg)
@@ -66,7 +68,7 @@ class ClanBattleSettings(commands.Cog):
             print(f"set-season exception says: {error}")
             await inter.send(msg)
 
-    @clan_battle.sub_command(name="set-days", description="Imposta i giorni delle clan battle: AAAA-MM-GG")
+    @commands.slash_command(name="set-days", description="Imposta i giorni delle clan battle: AAAA-MM-GG")
     async def set_days(self, inter: ApplicationCommandInteraction, start_date: str, end_date: str):
         if not await check_role(inter, RolesEnum.ADMIN):
             await inter.send("Non hai i permessi")
@@ -84,8 +86,8 @@ class ClanBattleSettings(commands.Cog):
         else:
             data1 = {"clan_battle_info": {str(ConfigKeys.CB_STARTING_DAY): start.strftime('%Y-%m-%d')}}
             data2 = {"clan_battle_info": {str(ConfigKeys.CB_ENDING_DAY): end.strftime('%Y-%m-%d')}}
-            res1 = self.api_mongo_db.update_config(data1)
-            res2 = self.api_mongo_db.update_config(data2)
+            res1 = self.api_mongo.update_config(data1)
+            res2 = self.api_mongo.update_config(data2)
             msg = "Controllare il terminale e/o log."
             if res1 and res2:
                 await inter.send("Impostato le date `" + start_date + "` e `" + end_date + "`.")

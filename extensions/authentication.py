@@ -14,11 +14,11 @@ from utils.functions import is_debugging, logout
 class Authentication(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.api_mongo_db = ApiMongoDB()
+        self.api_mongo = ApiMongoDB()
         self.api_wows = WoWsSession(config.data["APPLICATION_ID"], is_debugging())
 
-    @commands.slash_command(name="auth", description="Autentifica l'account di Discord con quello di WoWs")
-    async def auth(self, inter: ApplicationCommandInteraction):
+    @commands.slash_command(name="login", description="Autentifica l'account di Discord con quello di WoWs")
+    async def login(self, inter: ApplicationCommandInteraction):
         # TODO: change che URL with the correct IP and port
         url = "http://127.0.0.1:5000/create"
         params = "?discord=" + str(inter.author.id)
@@ -47,15 +47,15 @@ Informazioni ulteriori **non verranno utilizzati**.
         else:
             await inter.response.send_message("Errore del server (" + str(res.status_code) + ").", ephemeral=True)
 
-    @commands.slash_command(name="login", description="Controlla che l'autenticazione sia stata effettuata.")
-    async def login(self, inter: ApplicationCommandInteraction):
+    @commands.slash_command(name="auth", description="Controlla che il login sia stato effettuato.")
+    async def auth(self, inter: ApplicationCommandInteraction):
         await inter.response.defer()
         # Get player info
         try:
-            data = self.api_mongo_db.get_player_by_discord(str(inter.author.id))
+            data = self.api_mongo.get_player_by_discord(str(inter.author.id))
             player_id = data["wows"]
         except (TypeError, KeyError):
-            await inter.send("Non hai effettuato l'autenticazione. Digita `/auth`")
+            await inter.send("Non hai effettuato l'autenticazione. Digita `/login`")
             return
 
         nickname = self.api_wows.player_personal_data([player_id])[0]["account_name"]
@@ -72,11 +72,11 @@ Informazioni ulteriori **non verranno utilizzati**.
             await inter.author.edit(nick=clan_tag + nickname)
         except errors.Forbidden:
             pass
-        await inter.send("Login effettuato. Benvenut* " + nickname + "!")
+        await inter.send("Autenticazione effettuata. Benvenut* " + nickname + "!")
 
     @commands.slash_command(name="logout", description="Effettua il logout.")
     async def logout(self, inter: ApplicationCommandInteraction):
-        await logout(inter, self.api_mongo_db)
+        await logout(inter, self.api_mongo)
 
 
 def setup(bot):

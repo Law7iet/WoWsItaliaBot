@@ -20,7 +20,7 @@ class ClanBattleRanking(commands.Cog):
         self.api_mongo = ApiMongoDB()
         self.debugging = is_debugging()
 
-    def my_rank(self, config: dict) -> list[list[[]]]:
+    def get_clan_battle_ranking(self, config: dict) -> list[list[[]]]:
         # Each element represent a league.
         # The leagues are Hurricane, Typhoon, Storm, Gale and Squall
         # Each league has 3 divisions
@@ -77,15 +77,15 @@ class ClanBattleRanking(commands.Cog):
                 i = i + 1
         return clan_battle_ranking
 
-    @commands.slash_command(description="Genera la classifica delle Clan Battle.")
-    async def classifica(self, inter: ApplicationCommandInteraction) -> None:
+    @commands.slash_command(name="clan-battle-get-ranking", description="Genera la classifica delle Clan Battle.")
+    async def ranking(self, inter: ApplicationCommandInteraction) -> None:
         if not await check_role(inter, RolesEnum.ADMIN):
             await inter.send("Non hai i permessi.")
             return
         try:
             await inter.response.defer()
             mongo_config = self.api_mongo.get_config()["clan_battle_info"]
-            x = self.my_rank(mongo_config)
+            x = self.get_clan_battle_ranking(mongo_config)
             pos = 1
             league_index = 0
             if self.debugging:

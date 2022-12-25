@@ -24,6 +24,7 @@ if __name__ == "__main__":
         "event_manager",
         "moderation",
         "nickname",
+        "representant",
         "tournament_ranking"
     ]
     for extension in extensions:

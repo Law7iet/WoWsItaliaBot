@@ -13,10 +13,15 @@ class Nickname(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.debugging = is_debugging()
-        self.wargaming_api = WoWsSession(config.data["APPLICATION_ID"], is_debugging())
+        self.api_wows = WoWsSession(config.data["APPLICATION_ID"], is_debugging())
 
-    @commands.slash_command(name="nickname", description="Change the members' nickname with the in-game nickname")
+    async def check_own_nickname(self, inter: ApplicationCommandInteraction):
+        return
+
+    @commands.slash_command(name="controlla-nickname", description="Controlla che il nickname sia corretto.")
     async def nickname(self, inter: ApplicationCommandInteraction):
+        # Get user has AUTH
+        # Check if is admin
         await inter.response.defer()
         if not await check_role(inter, RolesEnum.ADMIN):
             await inter.send("Non hai i permessi.")
@@ -63,7 +68,7 @@ class Nickname(commands.Cog):
                 name = ''
             # Get user's current nickname and his clan tag using WoWs API
             try:
-                player_info = self.wargaming_api.players(old_nick)[0]
+                player_info = self.api_wows.players(old_nick)[0]
             except IndexError:
                 print(my_align(member.display_name, 35, 'left') + 'non è stato trovato')
                 continue
@@ -74,9 +79,9 @@ class Nickname(commands.Cog):
             # Check if user is in a clan
             try:
                 # The player has a clan
-                clan_id = self.wargaming_api.player_clan_data([player_id])[0]["clan_id"]
+                clan_id = self.api_wows.player_clan_data([player_id])[0]["clan_id"]
                 if clan_id:
-                    clan_tag = self.wargaming_api.clan_detail([clan_id])[0]["tag"]
+                    clan_tag = self.api_wows.clan_detail([clan_id])[0]["tag"]
                     new_tag = "[" + clan_tag + "] "
                 else:
                     raise IndexError

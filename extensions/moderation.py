@@ -14,18 +14,18 @@ class Moderation(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.debugging = is_debugging()
-        self.wargaming_api = WoWsSession(config.data["APPLICATION_ID"], is_debugging())
-        self.mongo_api = ApiMongoDB()
+        self.api_wows = WoWsSession(config.data["APPLICATION_ID"], is_debugging())
+        self.api_mongo = ApiMongoDB()
 
     async def check_player(self, inter: ApplicationCommandInteraction, member: Member, clan_id: str) -> bool:
         if inter.guild.get_role(int(RolesEnum.AUTH)) in member.roles:
-            player = self.mongo_api.get_player_by_discord(str(member.id))
+            player = self.api_mongo.get_player_by_discord(str(member.id))
             if not player:
                 # This should never happen: an authenticated player is not found in the db
                 await inter.send("<@" + str(member.id) + "> non è nel db.")
                 return False
             try:
-                clan = self.wargaming_api.player_clan_data([player["wows"]])[0]
+                clan = self.api_wows.player_clan_data([player["wows"]])[0]
                 if str(clan["clan_id"]) == clan_id:
                     return True
                 else:
@@ -37,8 +37,8 @@ class Moderation(commands.Cog):
             await inter.send("<@" + str(member.id) + "> non è autenticato.")
             return False
 
-    @commands.slash_command(name="write", description="Write a embed message and ping a role to notify them.")
-    async def write(self, inter: ApplicationCommandInteraction, canale: TextChannel, ruolo: Role) -> None:
+    @commands.slash_command(name="scrivi-messaggio", description="Scrive un messaggio embed e tagga un ruolo.")
+    async def write_message(self, inter: ApplicationCommandInteraction, canale: TextChannel, ruolo: Role) -> None:
         if not await check_role(inter, RolesEnum.ADMIN):
             await inter.send("Non hai i permessi.")
             return
@@ -48,12 +48,8 @@ class Moderation(commands.Cog):
             await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send("**>write command exception**")
             await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send("```" + str(error) + "```")
 
-    @commands.slash_command(name="aggiungi")
-    async def aggiungi(self, inter: ApplicationCommandInteraction) -> None:
-        pass
-
-    @aggiungi.sub_command(name="clan", description="Aggiunge un clan nel database.")
-    async def clan(
+    @commands.slash_command(name="aggiungi-clan", description="Aggiunge un clan nel database.")
+    async def add_clan(
         self,
         inter: ApplicationCommandInteraction,
         clan_id: int,
@@ -64,7 +60,7 @@ class Moderation(commands.Cog):
             await inter.send("Non hai i permessi.")
             return
         try:
-            clan_detail = self.wargaming_api.clan_detail([clan_id])[0]
+            clan_detail = self.api_wows.clan_detail([clan_id])[0]
         except IndexError:
             await inter.send("Clan ID errato.")
             return
@@ -83,7 +79,7 @@ class Moderation(commands.Cog):
             else:
                 return
 
-        result = self.mongo_api.insert_clan({
+        result = self.api_mongo.insert_clan({
             "id": clan_detail["clan_id"],
             "tag": clan_detail["tag"],
             "name": clan_detail["name"],

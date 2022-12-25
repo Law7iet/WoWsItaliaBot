@@ -1,7 +1,7 @@
 # Documentation: https://www.mongodb.com/languages/python
 
 from bson import ObjectId
-from pymongo import MongoClient, cursor, results, errors
+from pymongo import MongoClient, errors
 
 from models.my_enum.database_enum import DBCollections
 from utils.functions import get_config_id
@@ -35,7 +35,7 @@ class ApiMongoDB:
         try:
             return self.client[self.database_name][str(collection)].find_one(query)
         except Exception as error:
-            print(f"Error: Mongo __get_element({DBCollections}, {query})\n{error}")
+            print(f"Error: Mongo __get_element({str(DBCollections)}, {query})\n{error}")
             return {}
 
     def __get_elements(self, collection: DBCollections, query: dict) -> list:
@@ -53,7 +53,7 @@ class ApiMongoDB:
         try:
             return list(self.client[self.database_name][str(collection)].find(query))
         except Exception as error:
-            print(f"Error: Mongo __get_elements({DBCollections}, {query})\n{error}")
+            print(f"Error: Mongo __get_elements({str(DBCollections)}, {query})\n{error}")
             return []
 
     def __insert_element(self, collection: DBCollections, document: dict) -> dict:
@@ -73,14 +73,14 @@ class ApiMongoDB:
             document["_id"] = insertedDocument.inserted_id
             return document
         except errors.DuplicateKeyError:
-            print(f"Error: Mongo __insert_element({DBCollections}, {document})\nDuplicated Key")
+            print(f"Error: Mongo __insert_element({str(DBCollections)}, {document})\nDuplicated Key")
         except errors.WriteError as error:
             if error.code == 121:
-                print(f"Error: Mongo __insert_element({DBCollections}, {document})\nInvalid schema")
+                print(f"Error: Mongo __insert_element({str(DBCollections)}, {document})\nInvalid schema")
             else:
-                print(f"Error: Mongo __insert_element({DBCollections}, {document})\n{error}")
+                print(f"Error: Mongo __insert_element({str(DBCollections)}, {document})\n{error}")
         except Exception as error:
-            print(f"Error: Mongo __insert_element({DBCollections}, {document})\n{error}")
+            print(f"Error: Mongo __insert_element({str(DBCollections)}, {document})\n{error}")
         return {}
 
     def __update_element(self, collection: DBCollections, query: dict, new_data: dict) -> dict:
@@ -100,7 +100,7 @@ class ApiMongoDB:
         """
         try:
             elementToUpdate = self.client[self.database_name][str(collection)].find_one(query)
-            updatedResult = self.client[self.database_name][str(collection)].update_one(query, new_data)
+            updatedResult = self.client[self.database_name][str(collection)].update_one(query, {"$set": new_data})
             match updatedResult.matched_count:
                 case 0:
                     if updatedResult.modified_count == 0:
@@ -111,7 +111,7 @@ class ApiMongoDB:
                 case 1:
                     return elementToUpdate | new_data
                 case _:
-                    msg = f"Warning: Mongo __update_element({DBCollections}, {query}, {new_data})\n"
+                    msg = f"Warning: Mongo __update_element({str(DBCollections)}, {query}, {new_data})\n"
                     msg = msg + f"Matched count is higher than 1, it's {updatedResult.matched_count}"
                     print(msg)
                     if updatedResult.modified_count == 1:
@@ -121,16 +121,17 @@ class ApiMongoDB:
                         msg = msg + f"it's {updatedResult.modified_count}"
                         raise Exception(msg)
         except errors.WriteError as error:
+            msg = f"Error: Mongo __update_element({str(DBCollections)}, {query}, {new_data})\n"
             match error.code:
                 case 66:
-                    print(f"Error: Mongo __update_element({DBCollections}, {query}, {new_data})\nUpdate immutable _id")
+                    print(msg + "Update immutable _id")
                 case 121:
-                    print(f"Error: Mongo __update_element({DBCollections}, {query}, {new_data})\nInvalid schema")
+                    print(msg + "Invalid schema")
                 case _:
-                    print(f"Error: Mongo __update_element({DBCollections}, {query}, {new_data})\n{error}")
+                    print(msg + f"{error}")
             return {}
         except Exception as error:
-            print(f"Error: Mongo __update_element({DBCollections}, {query}, {new_data})\n{error}")
+            print(f"Error: Mongo __update_element({str(DBCollections)}, {query}, {new_data})\n{error}")
             return {}
 
     def __delete_element(self, collection: DBCollections, query: dict) -> dict:
@@ -154,7 +155,7 @@ class ApiMongoDB:
             elif deletedResult.deleted_count == 1:
                 return elementToDelete
             else:
-                msg = f"Warning: Mongo __delete_element({DBCollections}, {query})"
+                msg = f"Warning: Mongo __delete_element({str(DBCollections)}, {query})"
                 raise Exception(msg + f"\nMatched count {deletedResult.deleted_count}")
         except Exception as error:
             print(error)
@@ -228,7 +229,7 @@ class ApiMongoDB:
             The updated result.
              If an error occurs, it returns an empty dictionary.
         """
-        return self.__update_element(DBCollections.CONFIG, {"_id": ObjectId(get_config_id())}, {"$set": config_data})
+        return self.__update_element(DBCollections.CONFIG, {"_id": ObjectId(get_config_id())}, config_data)
 
     ####################################################################################################################
     #                                             Clans Collection API                                                 #
@@ -458,7 +459,7 @@ class ApiMongoDB:
         """
         return self.__update_element(DBCollections.PLAYERS, {"discord": discord_id}, player_data)
 
-    def delete_player(self, discord_id: str = "", wows_id: str = "") -> dict:
+    def delete_player(self, discord_id: str, wows_id: str) -> dict:
         """
         Deletes a player from the collection.
         The player to delete is the player that its Discord's and WoWs' id matches with `discord_id` and `clan_id`.

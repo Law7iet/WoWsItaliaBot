@@ -10,7 +10,7 @@ from utils.functions import logout
 class EventManager(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.api_mongo_db = ApiMongoDB()
+        self.api_mongo = ApiMongoDB()
 
     @commands.Cog.listener()
     async def on_message(self, message: Message):
@@ -24,7 +24,7 @@ class EventManager(commands.Cog):
             return
 
         elif inter.component.custom_id == "logout":
-            await logout(inter, self.api_mongo_db)
+            await logout(inter, self.api_mongo)
 
 
 def setup(bot):

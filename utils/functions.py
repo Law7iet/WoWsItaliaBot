@@ -12,6 +12,7 @@ from utils.constants import CONFIG_ID
 
 if TYPE_CHECKING:
     from api.mongo.api import ApiMongoDB
+    from api.wows.api import WoWsSession
 
 
 def check_data(url: str) -> dict | None:
@@ -100,24 +101,61 @@ def is_debugging() -> bool:
 
 async def logout(inter: ApplicationCommandInteraction, mongo: "ApiMongoDB") -> None:
     await inter.response.defer()
-    deleted_player = mongo.delete_player(str(inter.author.id))
-    if deleted_player:
-        # Remove role, restore nickname and clean DB
-        if inter.guild.get_role(int(RolesEnum.AUTH)) in inter.author:
-            await inter.author.remove_roles(inter.guild.get_role(int(RolesEnum.AUTH)))
-        if inter.guild.get_role(int(RolesEnum.REP)) in inter.author:
-            await inter.author.remove_roles(inter.guild.get_role(int(RolesEnum.REP)))
-            clan_tag = re.search(r"\[.+]", inter.author.display_name).group(0)[1:-1]
-            clan_data = mongo.get_clan_by_tag(clan_tag)
-            representations = clan_data["representations"]
-            representations.remove(str(inter.author.id))
-            res = mongo.update_clan_by_id(clan_data["id"], {"representations": representations})
-            if not res:
-                await inter.channel.send("Errore durante l'aggiornamento del clan. Controllare il terminale e/o log.")
-        try:
-            await inter.author.edit(nick=None)
-        except errors.Forbidden:
-            pass
-        await inter.send("Logout effettuato con successo.")
+    if not await check_role(inter, RolesEnum.AUTH):
+        await inter.send("Utente non autenticato.")
     else:
-        await inter.send("Logout non effettuato.")
+        player = mongo.get_player_by_discord(str(inter.author.id))
+        deleted_player = mongo.delete_player(player["discord"], player["wows"])
+        if deleted_player:
+            # Remove role, restore nickname and clean DB
+            if inter.guild.get_role(int(RolesEnum.AUTH)) in inter.author.roles:
+                await inter.author.remove_roles(inter.guild.get_role(int(RolesEnum.AUTH)))
+            if inter.guild.get_role(int(RolesEnum.REP)) in inter.author.roles:
+                await inter.author.remove_roles(inter.guild.get_role(int(RolesEnum.REP)))
+                clan_tag = re.search(r"\[.+]", inter.author.display_name).group(0)[1:-1]
+                clan_data = mongo.get_clan_by_tag(clan_tag)
+                representations = clan_data["representations"]
+                representations.remove(str(inter.author.id))
+                res = mongo.update_clan_by_id(clan_data["id"], {"representations": representations})
+                if not res:
+                    msg = "Errore durante l'aggiornamento del clan. Controllare il terminale e/o log."
+                    await inter.channel.send(msg)
+            try:
+                await inter.author.edit(nick=None)
+            except errors.Forbidden:
+                pass
+            await inter.send("Logout effettuato con successo.")
+        else:
+            await inter.send("Logout non effettuato.")
+
+
+async def check_clan(
+        inter: ApplicationCommandInteraction,
+        mongo: "ApiMongoDB",
+        wows: "WoWsSession",
+        clan_id: str
+) -> dict:
+    clan_mongo = mongo.get_clan_by_id(clan_id)
+    clan_wows = wows.clan_detail([clan_id])[0]
+    representants = clan_mongo["representations"]
+    tag = clan_wows["tag"]
+    updates = {}
+    if clan_mongo["name"] != clan_wows["name"]:
+        updates["name"] = clan_wows["name"]
+    if clan_mongo["tag"] != tag:
+        updates["tag"] = tag
+    if updates:
+        # Update clan
+        updated_clan = mongo.update_clan_by_id(clan_id, updates)
+        # Update representants' tag
+        for representant in representants:
+            member = inter.guild.get_member(representant)
+            nickname = member.display_name
+            nickname = re.sub(r"\[.+]", "", nickname).rstrip()
+            nickname = f"[{tag}] {nickname}"
+            if len(nickname) >= 32:
+                nickname = re.sub(r"\(.+\)", "", nickname).lstrip()
+            await member.edit(nick=nickname)
+        return updated_clan
+    else:
+        return clan_mongo
