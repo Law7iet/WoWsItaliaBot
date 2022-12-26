@@ -6,7 +6,7 @@ from disnake.ext import commands
 from api.wows.api import WoWsSession
 from models.my_enum.roles_enum import RolesEnum
 from settings import config
-from utils.functions import my_align, send_response_and_clear, check_role, is_debugging
+from utils.functions import align, check_role, is_debugging
 
 
 class Nickname(commands.Cog):
@@ -21,7 +21,7 @@ class Nickname(commands.Cog):
     @commands.slash_command(name="controlla-nickname", description="Controlla che il nickname sia corretto.")
     async def nickname(self, inter: ApplicationCommandInteraction):
         # Get user has AUTH
-        # Check if is admin
+        # Check if the user has the admin role.
         await inter.response.defer()
         if not await check_role(inter, RolesEnum.ADMIN):
             await inter.send("Non hai i permessi.")
@@ -32,7 +32,7 @@ class Nickname(commands.Cog):
         for member in members:
             # Print check
             if self.debugging:
-                print("USER: " + my_align(member.display_name, 35, "left"))
+                print("USER: " + align(member.display_name, 35, "left"))
 
             # Skip if member has admin, mod, cc, cm, org tag
             if guild.get_role(int(RolesEnum.ADMIN)) in member.roles:
@@ -49,7 +49,7 @@ class Nickname(commands.Cog):
                 continue
             if guild.get_role(int(RolesEnum.REF)) in member.roles:
                 continue
-            # Select who has "marinario" role
+            # Select who has 'marinario' role
             if not (guild.get_role(int(RolesEnum.SAILOR)) in member.roles):
                 continue
             # Select nickname
@@ -66,11 +66,11 @@ class Nickname(commands.Cog):
                 name = re.search(r"\(.+\)", member.display_name).group(0)
             except AttributeError:
                 name = ''
-            # Get user's current nickname and his clan tag using WoWs API
+            # Get the user's current nickname and his clan tag using WoWs API.
             try:
                 player_info = self.api_wows.players(old_nick)[0]
             except IndexError:
-                print(my_align(member.display_name, 35, 'left') + 'non è stato trovato')
+                print(align(member.display_name, 35, 'left') + 'non è stato trovato')
                 continue
             player_id = player_info["account_id"]
             game_nick = player_info["nickname"]
@@ -103,9 +103,9 @@ class Nickname(commands.Cog):
             if final_nick != member.display_name:
                 await member.edit(nick=final_nick)
                 if self.debugging:
-                    print(my_align(member.display_name, 35, 'left') + '-> ' + final_nick)
+                    print(align(member.display_name, 35, 'left') + '-> ' + final_nick)
 
-        await send_response_and_clear(inter, True, "Fatto!")
+        await inter.send("Fatto!")
 
 
 def setup(bot):

@@ -1,7 +1,5 @@
 from disnake import TextInputStyle, Role, TextChannel, ModalInteraction, ui, Embed, Attachment
 
-from utils.functions import send_response_and_clear
-
 
 class Modal(ui.Modal):
     def __init__(self, role: Role, channel: TextChannel, message: str = None):
@@ -48,12 +46,12 @@ class Modal(ui.Modal):
                     color=0xffffff
                 )
                 await message.edit(content="<@&" + str(self.role.id) + ">", embed=embed)
-            await send_response_and_clear(inter, False, "Fatto!")
+            await inter.send("Fatto!")
 
         except AttributeError:
-            await send_response_and_clear(inter, False, "Messaggio non trovato.")
+            await inter.send("Messaggio non trovato.")
         except ValueError:
-            await send_response_and_clear(inter, False, "ID del messaggio non corretto.")
+            await inter.send("ID del messaggio non corretto.")
         except Exception as error:
             await inter.response.send_message("Errore durante la generazione del modal.\n" + str(error))
 
@@ -120,7 +118,7 @@ class ModalPodium(ui.Modal):
             embed.set_footer(text='Congratulazioni!')
 
             await self.channel.send(embed=embed)
-            await send_response_and_clear(inter, False, "Fatto!")
+            await inter.send("Fatto!")
 
         except Exception as error:
             await inter.response.send_message("Errore durante la generazione del modal.\n\n" + str(error))

@@ -19,12 +19,11 @@ if __name__ == "__main__":
     bot = commands.InteractionBot(intents=intents, test_guilds=[379679393989001221])
     extensions = [
         "authentication",
-        "clan_battle_ranking",
-        "clan_battle_settings",
+        "clan_battle",
         "event_manager",
         "moderation",
         "nickname",
-        "representant",
+        "representation",
         "tournament_ranking"
     ]
     for extension in extensions:
