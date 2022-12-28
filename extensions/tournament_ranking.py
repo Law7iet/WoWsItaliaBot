@@ -6,18 +6,6 @@ from models.my_enum.channels_enum import ChannelsEnum
 from utils.functions import check_role, is_debugging
 from utils.modal import ModalPodium
 
-PodiumOptions = commands.option_enum({
-    "Primo": "Primo",
-    "Secondo": "Secondo",
-    "Terzo": "Terzo",
-    "Partecipante": "Partecipante"
-})
-
-TournamentOptions = commands.option_enum({
-    "Italian League": "Italian League",
-    "Italian Cup": "Italian Cup",
-})
-
 
 class TournamentRanking(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -28,28 +16,28 @@ class TournamentRanking(commands.Cog):
     async def podium(
         self,
         inter: ApplicationCommandInteraction,
-        torneo: TournamentOptions,
-        edizione: int,
-        posizione: PodiumOptions,
-        immagine: Attachment
+        tournament: str = commands.Param(name="torneo", choices=["Italian League", "Italian Cup"]),
+        edition: int = commands.Param(name="edizione"),
+        pos: str = commands.Param(name="posizione", choices=["Primo", "Secondo", "Terzo", "Partecipante"]),
+        image: Attachment = commands.Param(name="immagine")
     ) -> None:
         if not await check_role(inter, RolesEnum.ADMIN):
             await inter.send("Non hai i permessi.")
             return
-        if not immagine.content_type:
+        if not image.content_type:
             await inter.send("Formato immagine vuoto.")
             return
-        if not immagine.content_type == "image/jpeg" and not immagine.content_type == "image/png":
-            msg = "Formato immagine (`" + immagine.content_type + "`) non corretto. Formati ammessi: `jpg` e `png`"
+        if not image.content_type == "image/jpeg" and not image.content_type == "image/png":
+            msg = "Formato immagine (`" + image.content_type + "`) non corretto. Formati ammessi: `jpg` e `png`"
             await inter.send(msg)
             return
-        if edizione <= 0:
+        if edition <= 0:
             await inter.send("Il numero dell'edizione dev'essere maggiore di 0.")
             return
         if self.debugging:
             channel = inter.guild.get_channel(int(ChannelsEnum.TXT_TESTING))
         else:
-            match torneo:
+            match tournament:
                 case "Italian League":
                     channel = inter.guild.get_channel(int(ChannelsEnum.TXT_PODIO_LEAGUE))
                 case "Italian Cup":
@@ -57,11 +45,11 @@ class TournamentRanking(commands.Cog):
                 case _:
                     channel = inter.guild.get_channel(int(ChannelsEnum.TXT_TESTING))
         try:
-            await inter.response.send_modal(modal=ModalPodium(channel, torneo, edizione, posizione, immagine))
+            await inter.response.send_modal(modal=ModalPodium(channel, tournament, edition, pos, image))
         except Exception as error:
-            msg = '**>podium command exception: ModalPodium error**'
-            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send(msg)
-            await self.bot.get_channel(int(ChannelsEnum.TXT_TESTING)).send('```' + str(error) + '```')
+            print(error)
+            msg = f"**Errore** `podium(inter, {tournament}, {edition}, {pos}, {image})`"
+            await inter.response.send_message(f"{msg} Controllare il terminale e/o log.")
 
 
 def setup(bot):

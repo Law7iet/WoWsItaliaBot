@@ -11,50 +11,49 @@ from models.my_enum.database_enum import ConfigKeys
 from models.my_enum.league_type_enum import LeagueType
 from models.my_enum.roles_enum import RolesEnum
 from models.my_enum.channels_enum import ChannelsEnum
-from utils.functions import align, convert_string_to_datetime, check_role
-
-EventOptions = commands.option_enum({
-    "Data di inizio": "Data di inizio",
-    "Data di fine": "Data di fine"
-})
+from utils.functions import align, convert_string_to_datetime, check_role, is_debugging
 
 
 class ClanBattle(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.api_mongo = ApiMongoDB()
+        self.debugging = is_debugging()
 
     async def getter(self, config_key: ConfigKeys) -> dict:
         config_file = self.api_mongo.get_config()
-        return config_file["clan_battle_info"][str(config_key)]
+        return config_file[str(config_key)]
 
     def make_ranking(self, config: dict) -> list[list[[]]]:
         # Each element represent a league.
-        # The leagues are Hurricane, Typhoon, Storm, Gale and Squall
-        # Each league has 3 divisions
-        # TODO: Hurricane has only one division.
-        clan_battle_ranking = [[[], [], []], [[], [], []], [[], [], []], [[], [], []], [[], [], []]]
-        for italian_clan in self.api_mongo.get_clans_by_name(''):
-            data = cb_ranking(int(italian_clan['id']), self.debugging)
+        clan_battle_ranking = [
+            [[]],           # Hurricane (1 division)
+            [[], [], []],   # Typhoon (3 divisions)
+            [[], [], []],   # Storm (3 divisions)
+            [[], [], []],   # Gale (3 divisions)
+            [[], [], []]    # Squall (3 divisions)
+        ]
+        for italian_clan in self.api_mongo.get_clans_by_name(""):
+            data = cb_ranking(int(italian_clan["id"]), self.debugging)
             for element in data:
-                if str(element['season_number']) == str(config[str(ConfigKeys.CB_CURRENT_SEASON)]):
+                if str(element["season_number"]) == str(config[str(ConfigKeys.CB_CURRENT_SEASON)]):
                     promotion = []
                     # Compute squad (str)
-                    match element['team_number']:
-                        case 1: squad = 'A'
-                        case 2: squad = 'B'
+                    match element["team_number"]:
+                        case 1: squad = "A"
+                        case 2: squad = "B"
                         case _: continue
                     # Compute tag (str)
-                    tag = italian_clan['tag']
+                    tag = italian_clan["tag"]
                     # Check if a clan is inactive in the clan battles
-                    if element['battles_count'] == 0:
+                    if element["battles_count"] == 0:
                         continue
                     # Compute win_rate (str)
-                    win_rate = '%.2f' % (element['wins_count'] / element['battles_count'] * 100) + '%'
+                    win_rate = f"{(element['wins_count'] / element['battles_count'] * 100):.2f}%"
                     # Compute battles (int)
-                    battles = element['battles_count']
+                    battles = element["battles_count"]
                     # Compute league (LeagueType)
-                    match element['league']:
+                    match element["league"]:
                         case 0: league = LeagueType.HURRICANE
                         case 1: league = LeagueType.TYPHOON
                         case 2: league = LeagueType.STORM
@@ -62,21 +61,24 @@ class ClanBattle(commands.Cog):
                         case 4: league = LeagueType.SQUALL
                         case _: continue
                     # Compute division (int)
-                    division = element['division']
+                    division = element["division"]
                     # Compute division (int)
-                    score = element['division_rating']
+                    score = element["division_rating"]
                     # Compute promotion (list(str))
-                    if element['stage']:
-                        progress = element['stage']['progress']
+                    if element["stage"]:
+                        progress = element["stage"]["progress"]
                         for promoBattle in progress:
                             match promoBattle:
-                                case 'victory': promotion.append('+')
-                                case 'defeat': promotion.append('-')
+                                case "victory": promotion.append("+")
+                                case "defeat": promotion.append("-")
                                 case _: continue
                     # Create a Clan instance
                     clan = Clan(tag, squad, win_rate, battles, league, division, score, promotion)
                     # Insert the clan to the correct league and division
-                    clan_battle_ranking[int(clan.league)][clan.division - 1].append(clan)
+                    if clan.league == LeagueType.HURRICANE:
+                        clan_battle_ranking[int(clan.league)][0].append(clan)
+                    else:
+                        clan_battle_ranking[int(clan.league)][clan.division - 1].append(clan)
         # Sorting
         for league in clan_battle_ranking:
             i = 0
@@ -86,89 +88,104 @@ class ClanBattle(commands.Cog):
         return clan_battle_ranking
 
     @commands.slash_command(
-        name="clan-battle-get-season",
-        description="Ritorna il numero della stagione delle clan battle."
+        name="stagione-clan-battle",
+        description="Ritorna il numero della stagione delle clan battle salvato nel database."
     )
     async def get_season(self, inter: ApplicationCommandInteraction) -> None:
         value = await self.getter(ConfigKeys.CB_CURRENT_SEASON)
         if value:
-            await inter.send('La stagione delle clan battle è: `' + str(value) + '`.')
+            await inter.response.send_message(f"La stagione delle clan battle è: `{value}`.")
         else:
-            await inter.send('Valore incorretto: `' + str(value) + '`.')
+            await inter.response.send_message(f"**Errore** `get_season(inter)`\nValore `{value}` incorretto.")
 
-    @commands.slash_command(name="clan-battle-get-days", description="Ritorna le date delle clan battle")
-    async def get_days(self, inter: ApplicationCommandInteraction) -> None:
+    @commands.slash_command(
+        name="date-clan-battle",
+        description="Ritorna le date delle clan battle salvato nel database."
+    )
+    async def get_days(self, inter: ApplicationCommandInteraction):
         start = await self.getter(ConfigKeys.CB_STARTING_DAY)
         end = await self.getter(ConfigKeys.CB_ENDING_DAY)
         if start and end:
-            await inter.send('Le date delle clan battle sono: `' + str(start) + '` e `' + str(end) + '`.')
+            await inter.response.send_message(f"Le date delle clan battle sono: `{start}` e `{end}`.")
         elif not start:
-            await inter.send('Data d\'inizio vuota: : `' + str(start) + '`.')
+            await inter.response.send_message(f"**Errore** `get_days(inter)`\nData d\'inizio `{start}` non valida.")
         elif not end:
-            await inter.send('Data di fine vuota: : `' + str(end) + '`.')
+            await inter.response.send_message(f"**Errore** `get_days(inter)`\nData d\'inizio `{end}` non valida.")
 
     @commands.slash_command(
-        name="clan-battle-set-season",
-        description="Imposta il numero della stagione delle clan battle"
+        name="imposta-stagione-clan-battle",
+        description="Imposta il numero della stagione delle clan battle."
     )
-    async def set_season(self, inter: ApplicationCommandInteraction, season: str):
+    async def set_season(
+            self,
+            inter: ApplicationCommandInteraction,
+            season: int = commands.Param(name="stagione")
+    ) -> None:
         if not await check_role(inter, RolesEnum.ADMIN):
-            await inter.send("Non hai i permessi")
-            return
-        try:
-            msg = "Errore durante l'impostazione della stagione. Controllare il terminale e/o log."
-            value = int(season)
-            if value <= 0:
-                return
-            data = {"clan_battle_info": {str(ConfigKeys.CB_CURRENT_SEASON): value}}
-            if self.api_mongo.update_config(data):
-                await inter.send('Impostato la stagione: `' + str(value) + '`.')
-            else:
-                await inter.send(msg)
-        except Exception as error:
-            print(f"set-season exception says: {error}")
-            await inter.send(msg)
-
-    @commands.slash_command(name="set-days", description="Imposta i giorni delle clan battle: AAAA-MM-GG")
-    async def set_days(self, inter: ApplicationCommandInteraction, start_date: str, end_date: str):
-        if not await check_role(inter, RolesEnum.ADMIN):
-            await inter.send("Non hai i permessi")
-            return
-        start = start_date.split('-')
-        end = end_date.split('-')
-        try:
-            # Check integrity
-            start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]))
-            end = datetime.datetime(int(end[0]), int(end[1]), int(end[2]))
-        except Exception as error:
-            print(error)
-            await inter.send("Errore. Sintassi: AAAA-MM-GG AAAA-MM-GG")
-            return
+            await inter.response.send_message("Non hai i permessi.")
         else:
-            data1 = {"clan_battle_info": {str(ConfigKeys.CB_STARTING_DAY): start.strftime('%Y-%m-%d')}}
-            data2 = {"clan_battle_info": {str(ConfigKeys.CB_ENDING_DAY): end.strftime('%Y-%m-%d')}}
-            res1 = self.api_mongo.update_config(data1)
-            res2 = self.api_mongo.update_config(data2)
-            msg = "Controllare il terminale e/o log."
-            if res1 and res2:
-                await inter.send("Impostato le date `" + start_date + "` e `" + end_date + "`.")
-            elif res1:
-                await inter.send("Impostato la data di inizio clan battle `" + start_date + "`.")
-                await inter.channel.send("Errore durante l'impostazione della data di fine clan battle. " + msg)
-            elif res2:
-                await inter.send("Impostato la data di fine clan battle `" + end_date + "`.")
-                await inter.channel.send("Errore durante l'impostazione della data di inizio clan battle. " + msg)
-            else:
-                await inter.send("Errore durante l'impostazione delle date delle clan battle." + msg)
+            msg = f"**Errore** `set_season(inter, {season})`\nControllare il terminale e/o log."
+            try:
+                if season <= 0:
+                    return
+                data = {str(ConfigKeys.CB_CURRENT_SEASON): season}
+                if self.api_mongo.update_config(data):
+                    await inter.response.send_message(f"Impostato la stagione: '{season}`.'")
+                else:
+                    await inter.response.send_message(msg)
+            except Exception as error:
+                print(f"set_season exception says: {error}")
+                await inter.response.send_message(msg)
 
-    @commands.slash_command(name="get-ranking", description="Genera la classifica delle Clan Battle.")
+    @commands.slash_command(
+        name="imposta-date-clan-battle",
+        description="Imposta le date di inizio e fine clan battle: AAAA-MM-GG."
+    )
+    async def set_dates(
+            self,
+            inter: ApplicationCommandInteraction,
+            s_date: str = commands.Param(name="data-inizio", description="Formato AAAA-MM-GG."),
+            e_date: str = commands.Param(name="data-fine", description="Formato AAAA-MM-GG.")
+    ) -> None:
+        if not await check_role(inter, RolesEnum.ADMIN):
+            await inter.response.send_message("Non hai i permessi.")
+        else:
+            await inter.response.defer()
+            # Check params' format
+            try:
+                start = str(s_date).split("-")
+                end = str(e_date).split("-")
+                start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]))
+                end = datetime.datetime(int(end[0]), int(end[1]), int(end[2]))
+            except (IndexError, ValueError):
+                msg = f"**Errore** `set_dates(inter, {s_date}, {e_date})`\n"
+                msg = f"{msg}\nUtilizzare la sintassi `AAAA-MM-GG` per le date."
+                await inter.send(msg)
+            else:
+                # Update date
+                data1 = {str(ConfigKeys.CB_STARTING_DAY): start.strftime("%Y-%m-%d")}
+                data2 = {str(ConfigKeys.CB_ENDING_DAY): end.strftime("%Y-%m-%d")}
+                res1 = self.api_mongo.update_config(data1)
+                res2 = self.api_mongo.update_config(data2)
+                # Output
+                error = f"\n**Errore** `set_dates(inter, {s_date}, {e_date})`\nControllare il terminale e/o log."
+                if res1 and res2:
+                    await inter.send(f"Impostato le date `{s_date}` e `{e_date}`.")
+                elif res1:
+                    await inter.send(f"Impostato la data di inizio clan battle `{s_date}`.{error}")
+                elif res2:
+                    await inter.send(f"Impostato la data di fine clan battle `{e_date}`.{error}")
+                else:
+                    await inter.send(error)
+
+    @commands.slash_command(name="calcola-classifica", description="Genera la classifica delle Clan Battle.")
     async def get_ranking(self, inter: ApplicationCommandInteraction) -> None:
         if not await check_role(inter, RolesEnum.ADMIN):
             await inter.send("Non hai i permessi.")
             return
         try:
             await inter.response.defer()
-            mongo_config = self.api_mongo.get_config()["clan_battle_info"]
+            mongo_config = self.api_mongo.get_config()
             x = self.make_ranking(mongo_config)
             pos = 1
             league_index = 0
@@ -189,38 +206,36 @@ class ClanBattle(commands.Cog):
                     totalCount += 1
                     if d < today:
                         index += 1
-            day_message = '**\nGiornata ' + str(index) + ' di ' + str(totalCount) + '**\n'
+            day_message = f"\nGiornata {index} di {totalCount}\n"
             if today < start.date():
-                msg = "La data odierna (" + today.strftime("%d/%m/%Y") + ") è minore della data di inizio ("
-                msg = msg + start.strftime("%d/%m/%Y") + ")"
+                msg = f"La data odierna è minore della data di inizio `{start.strftime('%d/%m/%Y')}`."
                 await channel.send(msg)
                 day_message = '\n'
             if today > end.date():
-                msg = "La data odierna (" + today.strftime("%d/%m/%Y") + ") è maggiore della data di fine ("
-                msg = msg + end.strftime("%d/%m/%Y") + ")"
+                msg = f"La data odierna è maggiore della data di fine `{end.strftime('%d/%m/%Y')}`."
                 await channel.send(msg)
                 day_message = '\n'
             # Compute the content
-            title = '**Risultati Clan Battle Season ' + str(mongo_config[str(ConfigKeys.CB_CURRENT_SEASON)])
-            title = title + day_message + '**'
+            title = f"**Risultati Clan Battle Season {mongo_config[str(ConfigKeys.CB_CURRENT_SEASON)]}**{day_message}"
             message_list.append(title)
             # Add clans in the message
             for league in x:
                 division_index = 1
                 for division in league:
-                    message = LeagueType(league_index).color() + ' **Lega ' + str(LeagueType(league_index))
-                    message = message + ' - Divisione ' + str(division_index) + '**\n'
-                    message = message + '```\n### Clan    - WinRate - Btl - Score - Promo\n'
+                    message = f"{LeagueType(league_index).color()} **Lega {LeagueType(league_index)}**"
+                    if league_index != 0:
+                        message = message + f"** - Divisione {division_index}**"
+                    message = message + "\n```\n### Clan    - WinRate - Btl - Score - Promo\n"
                     for clan in division:
-                        body = align(str(pos), 3, 'right') + ' '
-                        body = body + align(clan.tag, 5, 'left') + ' ' + clan.squad + ' - '
-                        body = body + align(clan.win_rate, 7, 'right') + ' - '
-                        body = body + align(str(clan.battles), 3, 'right') + ' -   '
-                        body = body + align(str(clan.score), 2, 'right') + '  - '
+                        body = align(str(pos), 3, "right") + " "
+                        body = body + align(clan.tag, 5, "left") + ' ' + clan.squad + " - "
+                        body = body + align(clan.win_rate, 7, "right") + " - "
+                        body = body + align(str(clan.battles), 3, "right") + " -   "
+                        body = body + align(str(clan.score), 2, "right") + "  - "
                         body = body + clan.convert_promo_to_string()
-                        message = message + body + '\n'
+                        message = message + body + "\n"
                         pos = pos + 1
-                    message = message + '\n```'
+                    message = message + "```"
                     if division:
                         message_list.append(message)
                     division_index = division_index + 1
@@ -243,8 +258,8 @@ class ClanBattle(commands.Cog):
             await inter.send("Fatto!")
 
         except Exception as error:
-            print(f"classifica exception says: {error}")
-            msg = "Errore durante la generazione della classifica. Controllare il terminale e/o log."
+            print(f"get_ranking exception says: {error}")
+            msg = "**Errore** `get-ranking(inter)`\nControllare il terminale e/o log."
             await inter.send(msg)
 
 

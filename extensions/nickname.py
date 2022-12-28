@@ -1,12 +1,13 @@
 import re
 
-from disnake import ApplicationCommandInteraction
+from disnake import ApplicationCommandInteraction, errors
 from disnake.ext import commands
 
+from api.mongo.api import ApiMongoDB
 from api.wows.api import WoWsSession
 from models.my_enum.roles_enum import RolesEnum
 from settings import config
-from utils.functions import align, check_role, is_debugging
+from utils.functions import align, check_role, is_debugging, remove_representation
 
 
 class Nickname(commands.Cog):
@@ -14,12 +15,54 @@ class Nickname(commands.Cog):
         self.bot = bot
         self.debugging = is_debugging()
         self.api_wows = WoWsSession(config.data["APPLICATION_ID"], is_debugging())
+        self.api_mongo = ApiMongoDB()
 
-    async def check_own_nickname(self, inter: ApplicationCommandInteraction):
-        return
+    @commands.slash_command(name="nickname", description="Controlla il nome in gioco e imposta il nickname.")
+    async def check_own_nickname(
+            self,
+            inter: ApplicationCommandInteraction,
+            nickname: str | None = commands.Param(min_length=1, max_length=28, default=None)
+    ) -> None:
+        await inter.response.defer()
+        if not await check_role(inter, RolesEnum.AUTH):
+            await inter.send("Non sei autenticato. Digita `/login`")
+            return
+        try:
+            player_id = self.api_mongo.get_player_by_discord(str(inter.author.id))["wows_id"]
+            player = self.api_wows.player_personal_data([player_id])[0]
+        except (KeyError, IndexError):
+            await inter.send(f"Errore utente <@{inter.author.id}> non trovato.")
+            return
+        try:
+            old_tag = re.search(r"\[.+]", inter.author.display_name).group(0)[1:-1]
+        except AttributeError:
+            old_tag = ""
+        new_nickname = player["nickname"]
+        try:
+            clan_id = self.api_wows.player_clan_data([player_id])[0]["clan_id"]
+            clan_tag = "[" + self.api_wows.clan_detail([clan_id])[0]["tag"] + "] "
+        except (KeyError, IndexError):
+            clan_tag = ""
+        new_nickname = clan_tag + new_nickname
+        if len(new_nickname + nickname) + 3 <= 32:
+            new_nickname = f"{new_nickname} ({nickname})"
+            if clan_tag != old_tag:
+                representation = inter.guild.get_role(int(RolesEnum.REP))
+                if representation in inter.author.roles:
+                    if not await remove_representation(inter.author, representation, self.api_mongo, old_tag):
+                        await inter.send(f"Rappresentante non rimosso nel clan {old_tag} nel database.")
+                        return
+            try:
+                await inter.author.edit(nick=new_nickname)
+            except errors.Forbidden:
+                msg = f"Permessi negati durante la modifica dell'utente <@{inter.author.id}>."
+            await inter.send("Fatto!\n" + msg)
+        else:
+            max_length = 32 - len(new_nickname) - 3
+            await inter.send(f"Il nickname è troppo lungo. Utilizza un nickname di {max_length} caratteri.")
 
-    @commands.slash_command(name="controlla-nickname", description="Controlla che il nickname sia corretto.")
-    async def nickname(self, inter: ApplicationCommandInteraction):
+    @commands.slash_command(name="mod-nickname", description="Controlla che i nickname sia corretto.")
+    async def check_nickname(self, inter: ApplicationCommandInteraction):
         # Get user has AUTH
         # Check if the user has the admin role.
         await inter.response.defer()
@@ -33,7 +76,6 @@ class Nickname(commands.Cog):
             # Print check
             if self.debugging:
                 print("USER: " + align(member.display_name, 35, "left"))
-
             # Skip if member has admin, mod, cc, cm, org tag
             if guild.get_role(int(RolesEnum.ADMIN)) in member.roles:
                 continue
@@ -66,7 +108,7 @@ class Nickname(commands.Cog):
                 name = re.search(r"\(.+\)", member.display_name).group(0)
             except AttributeError:
                 name = ''
-            # Get the user's current nickname and his clan tag using WoWs API.
+            # Get the nickname, and the clan tag of the current user using the WoWs' API.
             try:
                 player_info = self.api_wows.players(old_nick)[0]
             except IndexError:
@@ -93,8 +135,9 @@ class Nickname(commands.Cog):
             if old_tag != new_tag[1:-2]:
                 representation = guild.get_role(int(RolesEnum.REP))
                 if representation in member.roles:
-                    await member.remove_roles(representation)
-            # Check if the user has a name. If it's true restore the name if is shorter than 32
+                    if not await remove_representation(inter, representation, self.mongo, old_tag):
+                        await inter.send("Non è stato possibile modificare il database.")
+            # Check if the user has a name. If it is true restore the name if is shorter than 32.
             final_nick = new_tag + new_nick
             if name != "":
                 if len(final_nick + " " + name) <= 32:

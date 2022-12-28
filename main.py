@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # Bot test slash command
     @bot.slash_command(description="Pong!")
     async def ping(inter: ApplicationCommandInteraction):
-        await inter.response.send_message("Pong! `" + str(round(bot.latency * 1000)) + "ms`")
+        await inter.response.send_message(f"Pong! `{round(bot.latency * 1000)}`ms")
 
     # Run bot
     try:

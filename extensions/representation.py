@@ -7,11 +7,6 @@ from models.my_enum.roles_enum import RolesEnum
 from settings import config
 from utils.functions import check_role, is_debugging, sync_clan
 
-ActionOptions = commands.option_enum({
-    "Aggiungi": "Aggiungi",
-    "Rimuovi": "Rimuovi"
-})
-
 
 class Representant(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -64,20 +59,29 @@ class Representant(commands.Cog):
                 await self.remove(inter, member, clan_mongo)
 
     @commands.slash_command(name="rappresentante", description="Aggiunge o rimuove un rappresentante di un clan")
-    async def representation(self, inter: ApplicationCommandInteraction, azione: ActionOptions):
+    async def representation(
+            self,
+            inter: ApplicationCommandInteraction,
+            action: str = commands.Param(name="azione", choices=["Aggiungi", "Rimuovi"])
+    ) -> None:
         await inter.response.defer()
         if not await check_role(inter, RolesEnum.AUTH):
             await inter.send("Non hai i permessi: utente non autenticato. Effettua prima il login (`/login`)")
         else:
-            await self.representant(inter, azione == "Aggiungi", inter.author)
+            await self.representant(inter, action == "Aggiungi", inter.author)
 
     @commands.slash_command(name="mod-rappresentante", description="Aggiunge o rimuove un rappresentante di un clan")
-    async def mod_representation(self, inter: ApplicationCommandInteraction, azione: ActionOptions, utente: Member):
+    async def mod_representation(
+            self,
+            inter: ApplicationCommandInteraction,
+            action: str = commands.Param(name="azione", choices=["Aggiungi", "Rimuovi"]),
+            user: Member = commands.Param(name="utente")
+    ) -> None:
         await inter.response.defer()
         if not await check_role(inter, RolesEnum.MOD):
             await inter.send("Non hai i permessi: utente non autenticato. Effettua prima il login (`/login`)")
         else:
-            await self.representant(inter, azione == "Aggiungi", utente)
+            await self.representant(inter, action == "Aggiungi", user)
 
 
 def setup(bot):

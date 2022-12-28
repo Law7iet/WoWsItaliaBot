@@ -4,7 +4,7 @@ import sys
 from typing import TYPE_CHECKING
 
 import requests
-from disnake import ApplicationCommandInteraction, errors, Member
+from disnake import ApplicationCommandInteraction, errors, Member, Role
 
 from models.my_enum.roles_enum import RolesEnum
 from utils.constants import CONFIG_ID
@@ -12,6 +12,8 @@ from utils.constants import CONFIG_ID
 if TYPE_CHECKING:
     from api.mongo.api import ApiMongoDB
     from api.wows.api import WoWsSession
+
+# TODO: Add docstring to the functions
 
 
 def align(word: str, max_length: int, side: str) -> str:
@@ -47,7 +49,7 @@ async def sync_clan(
 ) -> dict:
     """
     Synchronize the clan's data between the WoWs' API and MongoDB's data.
-    If the tag is changed, it updates the tag of his representants.
+    If the tag is changed, it updates the tag of his representations.
 
     Args:
         inter: The contex.
@@ -60,7 +62,7 @@ async def sync_clan(
     """
     clan_mongo = mongo.get_clan_by_id(clan_id)
     clan_wows = wows.clan_detail([clan_id])[0]
-    representants = clan_mongo["representations"]
+    representations = clan_mongo["representations"]
     tag = clan_wows["tag"]
     updates = {}
     if clan_mongo["name"] != clan_wows["name"]:
@@ -72,8 +74,8 @@ async def sync_clan(
         updated_clan = mongo.update_clan_by_id(clan_id, updates)
         if updated_clan:
             # Clan correctly updated
-            # Update representants' tag
-            for representant in representants:
+            # Update representations' tag
+            for representant in representations:
                 member = inter.guild.get_member(int(representant))
                 nickname = re.sub(r"\[.+]", "", member.display_name).rstrip()
                 nickname = f"[{tag}] {nickname}"
@@ -143,7 +145,7 @@ def is_debugging() -> bool:
 async def logout(inter: ApplicationCommandInteraction, mongo: "ApiMongoDB") -> None:
     await inter.response.defer()
     if not await check_role(inter, RolesEnum.AUTH):
-        await inter.send("Logout non effettuato: utente non autenticato.")
+        await inter.send(f"Logout non effettuato: utente <@{inter.author.id}> non autenticato.")
     else:
         player = mongo.get_player_by_discord(str(inter.author.id))
         deleted_player = mongo.delete_player(player["discord"], player["wows"])
@@ -152,14 +154,9 @@ async def logout(inter: ApplicationCommandInteraction, mongo: "ApiMongoDB") -> N
             if inter.guild.get_role(int(RolesEnum.AUTH)) in inter.author.roles:
                 await inter.author.remove_roles(inter.guild.get_role(int(RolesEnum.AUTH)))
             if inter.guild.get_role(int(RolesEnum.REP)) in inter.author.roles:
-                await inter.author.remove_roles(inter.guild.get_role(int(RolesEnum.REP)))
-                clan_tag = re.search(r"\[.+]", inter.author.display_name).group(0)[1:-1]
-                clan_data = mongo.get_clan_by_tag(clan_tag)
-                representations = clan_data["representations"]
-                representations.remove(str(inter.author.id))
-                res = mongo.update_clan_by_id(clan_data["id"], {"representations": representations})
-                if not res:
-                    msg = "Errore durante l'aggiornamento del clan. Controllare il terminale e/o log."
+                tag = re.search(r"\[.+]", inter.author.display_name).group(0)[1:-1]
+                if not await remove_representation(inter.author, inter.guild.get_role(int(RolesEnum.REP)), mongo, tag):
+                    msg = f"Errore durante l'aggiornamento del clan `{tag}`. Controllare il terminale e/o log."
                     await inter.channel.send(msg)
                     mongo.insert_player(
                         deleted_player["discord"],
@@ -167,10 +164,23 @@ async def logout(inter: ApplicationCommandInteraction, mongo: "ApiMongoDB") -> N
                         deleted_player["token"],
                         deleted_player["expire"]
                     )
+            msg = f"Logout effettuato con successo. Arrivederci <@{inter.author.id}>"
             try:
                 await inter.author.edit(nick=None)
             except errors.Forbidden:
-                pass
-            await inter.send("Logout effettuato con successo.")
+                msg = f"{msg}\n*Avviso* `logout(inter, mongo)`"
+                msg = f"{msg}\nPermessi negati durante la modifica dell'utente <@{inter.author.id}>."
+            await inter.send(msg)
         else:
-            await inter.send("Logout non effettuato.")
+            msg = f"Logout dell'utente <@{inter.author.id}> non effettuato."
+            msg = f"{msg}\n**Errore** `logout(inter, mongo)`"
+            msg = f"{msg}\nUtente <@{inter.author.id}> non è stato trovato e/o cancellato."
+            await inter.send(msg)
+
+
+async def remove_representation(user: Member, role: Role, mongo: "ApiMongoDB", old_clan_tag: str) -> dict:
+    await user.author.remove_roles(role)
+    clan_data = mongo.get_clan_by_tag(old_clan_tag)
+    representations = clan_data["representations"]
+    representations.remove(str(user.id))
+    return mongo.update_clan_by_id(clan_data["id"], {"representations": representations})

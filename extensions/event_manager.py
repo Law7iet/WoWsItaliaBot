@@ -13,16 +13,14 @@ class EventManager(commands.Cog):
         self.api_mongo = ApiMongoDB()
 
     @commands.Cog.listener()
-    async def on_message(self, message: Message):
+    async def on_message(self, message: Message) -> None:
         if message.author.bot and message.channel.id == int(ChannelsEnum.TXT_DEV_BLOG):
             await message.publish()
 
     @commands.Cog.listener("on_button_click")
-    async def help_listener(self, inter: MessageInteraction):
+    async def help_listener(self, inter: MessageInteraction) -> None:
         if inter.component.custom_id not in ["logout"]:
-            # We filter out any other button presses except the components we wish to process.
             return
-
         elif inter.component.custom_id == "logout":
             await logout(inter, self.api_mongo)
 

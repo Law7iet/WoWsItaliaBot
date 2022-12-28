@@ -2,7 +2,7 @@ from disnake import TextInputStyle, Role, TextChannel, ModalInteraction, ui, Emb
 
 
 class Modal(ui.Modal):
-    def __init__(self, role: Role, channel: TextChannel, message: str = None):
+    def __init__(self, role: Role | None, channel: TextChannel, message: str = None):
         self.role = role
         self.channel = channel
         self.message_id = message
@@ -36,7 +36,10 @@ class Modal(ui.Modal):
                     description=inter.text_values["description"],
                     color=0xffffff
                 )
-                await self.channel.send("<@&" + str(self.role.id) + ">", embed=embed)
+                if self.role:
+                    await self.channel.send("<@" + str(self.role.id) + ">", embed=embed)
+                else:
+                    await self.channel.send(embed=embed)
             else:
                 message = await self.channel.fetch_message(int(self.message_id))
                 old_embed = message.embeds[0]
@@ -45,7 +48,11 @@ class Modal(ui.Modal):
                     description=old_embed.description if inter.text_values["description"] == "" else inter.text_values["description"],
                     color=0xffffff
                 )
-                await message.edit(content="<@&" + str(self.role.id) + ">", embed=embed)
+                if self.role:
+                    await message.edit(content="<@" + str(self.role.id) + ">", embed=embed)
+                else:
+                    await message.edit(content="", embed=embed)
+
             await inter.send("Fatto!")
 
         except AttributeError:

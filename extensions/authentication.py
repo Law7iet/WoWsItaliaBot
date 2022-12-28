@@ -17,24 +17,23 @@ class Authentication(commands.Cog):
         self.api_mongo = ApiMongoDB()
         self.api_wows = WoWsSession(config.data["APPLICATION_ID"], is_debugging())
 
-    @commands.slash_command(name="login", description="Autentifica l'account di Discord con quello di WoWs")
-    async def login(self, inter: ApplicationCommandInteraction):
+    @commands.slash_command(name="login", description="Autentifica l'account di Discord con quello di WoWs.")
+    async def login(self, inter: ApplicationCommandInteraction) -> None:
+        msg = [
+            "Il servizio utilizzerà i seguenti dati personali:",
+            ":white_check_mark: il nome utente",
+            "",
+            "Il servizio **non avrà accesso** a:",
+            ":x: l'email",
+            ":x: la password",
+            ":x: il numero di cellulare",
+            "Informazioni ulteriori **non verranno utilizzati**."
+        ]
         # TODO: change che URL with the correct IP and port
         url = "http://127.0.0.1:5000/create"
-        params = "?discord=" + str(inter.author.id)
-        msg = """
-Il servizio utilizzerà i seguenti dati personali:
-:white_check_mark: il nome utente
-
-Il servizio **non avrà accesso** a:
-:x: l'email
-:x: la password
-:x: il numero di cellulare
-Informazioni ulteriori **non verranno utilizzati**.
-"""
-        res = requests.get(url + params)
+        res = requests.get(f"{url}?discord={inter.author.id}")
         if res.status_code == 200:
-            embed = Embed(title="WoWsItaliaBot", description=msg)
+            embed = Embed(title="WoWsItaliaBot", description="\n".join(msg))
             embed.set_footer(text="Eventuali nuovi permessi verranno notificati.")
             await inter.response.send_message(
                 embed=embed,
@@ -45,37 +44,38 @@ Informazioni ulteriori **non verranno utilizzati**.
                 ephemeral=True
             )
         else:
-            await inter.response.send_message("Errore del server (" + str(res.status_code) + ").", ephemeral=True)
+            await inter.response.send_message(f"Errore del server: status `{res.status_code}`.", ephemeral=True)
 
-    @commands.slash_command(name="auth", description="Controlla che il login sia stato effettuato.")
-    async def auth(self, inter: ApplicationCommandInteraction):
+    @commands.slash_command(name="auth", description="Controlla e autorizza l'utente.")
+    async def auth(self, inter: ApplicationCommandInteraction) -> None:
         await inter.response.defer()
-        # Get player info
+        # Get the player from the database
         try:
             data = self.api_mongo.get_player_by_discord(str(inter.author.id))
             player_id = data["wows"]
         except (TypeError, KeyError):
-            await inter.send("Non hai effettuato l'autenticazione. Digita `/login`")
+            await inter.send("Non hai effettuato l'autenticazione. Digita `/login`.")
             return
-
+        # Get the player's in-game name and his clan
         nickname = self.api_wows.player_personal_data([player_id])[0]["account_name"]
         try:
             clan_id = self.api_wows.player_clan_data([player_id])[0]["clan_id"]
             clan_tag = self.api_wows.clan_detail([clan_id])[0]["tag"]
-            clan_tag = "[" + clan_tag + "] "
+            clan_tag = f"[{clan_tag}] "
         except TypeError:
             clan_tag = ""
-
-        # Add role and change nickname
-        await inter.author.add_roles(inter.guild.get_role(int(RolesEnum.AUTH)))
+        # Add the role and change the player's nickname
+        msg = f"Autenticazione effettuata. Benvenut* <@{inter.author.id}>!"
         try:
+            await inter.author.add_roles(inter.guild.get_role(int(RolesEnum.AUTH)))
             await inter.author.edit(nick=clan_tag + nickname)
         except errors.Forbidden:
-            pass
-        await inter.send("Autenticazione effettuata. Benvenut* " + nickname + "!")
+            msg = f"{msg}\n*Avviso* `auth(inter)`"
+            msg = f"{msg}\nPermessi negati durante la modifica dell'utente <@{inter.author.id}>."
+        await inter.send(msg)
 
-    @commands.slash_command(name="logout", description="Effettua il logout.")
-    async def logout(self, inter: ApplicationCommandInteraction):
+    @commands.slash_command(name="logout", description="Cancella propri i dati dal database.")
+    async def logout(self, inter: ApplicationCommandInteraction) -> None:
         await logout(inter, self.api_mongo)
 
 
