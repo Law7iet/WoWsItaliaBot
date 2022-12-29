@@ -29,8 +29,7 @@ class Authentication(commands.Cog):
             ":x: il numero di cellulare",
             "Informazioni ulteriori **non verranno utilizzati**."
         ]
-        # TODO: change che URL with the correct IP and port
-        url = "http://127.0.0.1:5000/create"
+        url = "https://server.law7iet.repl.co/create"
         res = requests.get(f"{url}?discord={inter.author.id}")
         if res.status_code == 200:
             embed = Embed(title="WoWsItaliaBot", description="\n".join(msg))

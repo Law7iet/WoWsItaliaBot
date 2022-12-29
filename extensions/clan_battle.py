@@ -130,7 +130,7 @@ class ClanBattle(commands.Cog):
                     return
                 data = {str(ConfigKeys.CB_CURRENT_SEASON): season}
                 if self.api_mongo.update_config(data):
-                    await inter.response.send_message(f"Impostato la stagione: '{season}`.'")
+                    await inter.response.send_message(f"Impostato la stagione: `{season}`.")
                 else:
                     await inter.response.send_message(msg)
             except Exception as error:
