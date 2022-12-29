@@ -4,15 +4,18 @@ from bson import ObjectId
 from pymongo import MongoClient, errors
 
 from models.my_enum.database_enum import DBCollections
+from settings.config import data
 from utils.functions import get_config_id
 
 
 class ApiMongoDB:
     def __init__(self):
-        self.database_name = "WoWsItaliaDB"
+        self.project = "WoWsItaliaBot"
+        self.database_name = "WoWsItalia"
         try:
             self.client = MongoClient(serverSelectionTimeoutMS=10)
-            self.client.server_info()
+            self.client = MongoClient(f"mongodb+srv://{data['MONGO_USER']}:{data['MONGO_PASSWORD']}@cluster0.rtvit"
+                                      f".mongodb.net/{self.project}?retryWrites=true&w=majority")
         except (errors.ConnectionFailure, errors.ServerSelectionTimeoutError):
             raise Exception("Database non connesso")
 
