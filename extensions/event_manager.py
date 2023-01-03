@@ -2,7 +2,7 @@ from disnake import Message, MessageInteraction
 from disnake.ext import commands
 
 from api.mongo.api import ApiMongoDB
-from models.my_enum.channels_enum import ChannelsEnum
+from models.enum.discord_id import MyChannels
 
 from utils.functions import logout
 
@@ -14,7 +14,7 @@ class EventManager(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: Message) -> None:
-        if message.author.bot and message.channel.id == int(ChannelsEnum.TXT_DEV_BLOG):
+        if message.author.bot and message.channel.id == int(MyChannels.TXT_DEV_BLOG):
             await message.publish()
 
     @commands.Cog.listener("on_button_click")

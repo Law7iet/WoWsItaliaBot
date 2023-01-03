@@ -5,7 +5,7 @@ from disnake.ext import commands
 
 from api.mongo.api import ApiMongoDB
 from api.wows.api import WoWsSession
-from models.my_enum.roles_enum import RolesEnum
+from models.enum.discord_id import MyRoles
 from settings import config
 from utils.functions import align, check_role, is_debugging, remove_representation
 
@@ -24,7 +24,7 @@ class Nickname(commands.Cog):
             nickname: str | None = commands.Param(min_length=1, max_length=28, default=None)
     ) -> None:
         await inter.response.defer()
-        if not await check_role(inter, RolesEnum.AUTH):
+        if not await check_role(inter, MyRoles.AUTH):
             await inter.send("Non sei autenticato. Digita `/login`")
             return
         try:
@@ -47,16 +47,17 @@ class Nickname(commands.Cog):
         if len(new_nickname + nickname) + 3 <= 32:
             new_nickname = f"{new_nickname} ({nickname})"
             if clan_tag != old_tag:
-                representation = inter.guild.get_role(int(RolesEnum.REP))
+                representation = inter.guild.get_role(int(MyRoles.REP))
                 if representation in inter.author.roles:
                     if not await remove_representation(inter.author, representation, self.api_mongo, old_tag):
                         await inter.send(f"Rappresentante non rimosso nel clan {old_tag} nel database.")
                         return
+            msg = "Fatto!"
             try:
                 await inter.author.edit(nick=new_nickname)
             except errors.Forbidden:
-                msg = f"Permessi negati durante la modifica dell'utente <@{inter.author.id}>."
-            await inter.send("Fatto!\n" + msg)
+                msg = f"{msg}\nPermessi negati durante la modifica dell'utente <@{inter.author.id}>."
+            await inter.send(msg)
         else:
             max_length = 32 - len(new_nickname) - 3
             await inter.send(f"Il nickname è troppo lungo. Utilizza un nickname di {max_length} caratteri.")
@@ -66,7 +67,7 @@ class Nickname(commands.Cog):
         # Get user has AUTH
         # Check if the user has the admin role.
         await inter.response.defer()
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, MyRoles.ADMIN):
             await inter.send("Non hai i permessi.")
             return
         # Get all the server's members
@@ -77,22 +78,22 @@ class Nickname(commands.Cog):
             if self.debugging:
                 print("USER: " + align(member.display_name, 35, "left"))
             # Skip if member has admin, mod, cc, cm, org tag
-            if guild.get_role(int(RolesEnum.ADMIN)) in member.roles:
+            if guild.get_role(int(MyRoles.ADMIN)) in member.roles:
                 continue
-            if guild.get_role(int(RolesEnum.MOD)) in member.roles:
+            if guild.get_role(int(MyRoles.MOD)) in member.roles:
                 continue
-            if guild.get_role(int(RolesEnum.CM)) in member.roles:
+            if guild.get_role(int(MyRoles.CM)) in member.roles:
                 continue
-            if guild.get_role(int(RolesEnum.CC)) in member.roles:
+            if guild.get_role(int(MyRoles.CC)) in member.roles:
                 continue
-            if guild.get_role(int(RolesEnum.ORG_CUP)) in member.roles:
+            if guild.get_role(int(MyRoles.ORG_CUP)) in member.roles:
                 continue
-            if guild.get_role(int(RolesEnum.ORG_LEAGUE)) in member.roles:
+            if guild.get_role(int(MyRoles.ORG_LEAGUE)) in member.roles:
                 continue
-            if guild.get_role(int(RolesEnum.REF)) in member.roles:
+            if guild.get_role(int(MyRoles.REF)) in member.roles:
                 continue
             # Select who has 'marinario' role
-            if not (guild.get_role(int(RolesEnum.SAILOR)) in member.roles):
+            if not (guild.get_role(int(MyRoles.SAILOR)) in member.roles):
                 continue
             # Select nickname
             tmp = re.sub(r"\[.+]", "", member.display_name)
@@ -133,9 +134,9 @@ class Nickname(commands.Cog):
 
             # Check if the user changed clan
             if old_tag != new_tag[1:-2]:
-                representation = guild.get_role(int(RolesEnum.REP))
+                representation = guild.get_role(int(MyRoles.REP))
                 if representation in member.roles:
-                    if not await remove_representation(inter, representation, self.mongo, old_tag):
+                    if not await remove_representation(member, representation, self.api_mongo, old_tag):
                         await inter.send("Non è stato possibile modificare il database.")
             # Check if the user has a name. If it is true restore the name if is shorter than 32.
             final_nick = new_tag + new_nick

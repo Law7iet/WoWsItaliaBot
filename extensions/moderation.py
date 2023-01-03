@@ -3,10 +3,10 @@ from disnake.ext import commands
 
 from api.mongo.api import ApiMongoDB
 from api.wows.api import WoWsSession
-from models.my_enum.roles_enum import RolesEnum
+from models.enum.discord_id import MyRoles
+from models.modal import Modal
 from settings import config
 from utils.functions import check_role, is_debugging
-from utils.modal import Modal
 
 
 class Moderation(commands.Cog):
@@ -18,7 +18,7 @@ class Moderation(commands.Cog):
 
     async def check_player(self, inter: ApplicationCommandInteraction, member: Member, clan_id: str) -> bool:
         msg = f"**Errore** `check_player(inter, <@{member.id}>, {clan_id})`"
-        if inter.guild.get_role(int(RolesEnum.AUTH)) in member.roles:
+        if inter.guild.get_role(int(MyRoles.AUTH)) in member.roles:
             player = self.api_mongo.get_player_by_discord(str(member.id))
             if not player:
                 # This should never happen: an authenticated player is not found in the database.
@@ -44,7 +44,7 @@ class Moderation(commands.Cog):
             channel: TextChannel = commands.Param(name="canale"),
             role: Role | None = commands.Param(name="ruolo", default=None)
     ) -> None:
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, MyRoles.ADMIN):
             await inter.send("Non hai i permessi.")
             return
         try:
@@ -61,7 +61,7 @@ class Moderation(commands.Cog):
         rep_1: Member | None = commands.Param(name="rappresentante-1", default=None),
         rep_2: Member | None = commands.Param(name="rappresentante-2", default=None)
     ) -> None:
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, MyRoles.ADMIN):
             await inter.send("Non hai i permessi.")
             return
         await inter.response.defer()
@@ -88,7 +88,7 @@ class Moderation(commands.Cog):
             })
             # Send output
             if result:
-                role = inter.guild.get_role(int(RolesEnum.REP))
+                role = inter.guild.get_role(int(MyRoles.REP))
                 msg = "Clan " + clan_detail["tag"] + " inserito.\n"
                 if rep_1 and rep_2:
                     await rep_1.add_roles(role)

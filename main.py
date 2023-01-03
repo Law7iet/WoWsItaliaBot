@@ -42,7 +42,7 @@ if __name__ == "__main__":
 	async def on_ready():
 		print("WoWsItalia is up")
 	
-    # Run bot
+	# Run bot
 	try:
 		keep_alive()
 		bot.run(config.data["DISCORD_TOKEN"])

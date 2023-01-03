@@ -3,7 +3,7 @@
 from bson import ObjectId
 from pymongo import MongoClient, errors
 
-from models.my_enum.database_enum import DBCollections
+from api.mongo.utils import DBCollections
 from settings.config import data
 from utils.functions import get_config_id
 

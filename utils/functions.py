@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import requests
 from disnake import ApplicationCommandInteraction, errors, Member, Role
 
-from models.my_enum.roles_enum import RolesEnum
+from models.enum.discord_id import MyRoles
 from utils.constants import CONFIG_ID
 
 if TYPE_CHECKING:
@@ -117,7 +117,7 @@ def check_data(url: str) -> dict | None:
         return data
 
 
-async def check_role(inter: ApplicationCommandInteraction, value: RolesEnum, member: Member = None) -> bool:
+async def check_role(inter: ApplicationCommandInteraction, value: MyRoles, member: Member = None) -> bool:
     role = inter.guild.get_role(int(value))
     user = member if member else inter.author
     if role in user.roles:
@@ -144,18 +144,18 @@ def is_debugging() -> bool:
 
 async def logout(inter: ApplicationCommandInteraction, mongo: "ApiMongoDB") -> None:
     await inter.response.defer()
-    if not await check_role(inter, RolesEnum.AUTH):
+    if not await check_role(inter, MyRoles.AUTH):
         await inter.send(f"Logout non effettuato: utente <@{inter.author.id}> non autenticato.")
     else:
         player = mongo.get_player_by_discord(str(inter.author.id))
         deleted_player = mongo.delete_player(player["discord"], player["wows"])
         if deleted_player:
             # Remove role, restore nickname and clean DB
-            if inter.guild.get_role(int(RolesEnum.AUTH)) in inter.author.roles:
-                await inter.author.remove_roles(inter.guild.get_role(int(RolesEnum.AUTH)))
-            if inter.guild.get_role(int(RolesEnum.REP)) in inter.author.roles:
+            if inter.guild.get_role(int(MyRoles.AUTH)) in inter.author.roles:
+                await inter.author.remove_roles(inter.guild.get_role(int(MyRoles.AUTH)))
+            if inter.guild.get_role(int(MyRoles.REP)) in inter.author.roles:
                 tag = re.search(r"\[.+]", inter.author.display_name).group(0)[1:-1]
-                if not await remove_representation(inter.author, inter.guild.get_role(int(RolesEnum.REP)), mongo, tag):
+                if not await remove_representation(inter.author, inter.guild.get_role(int(MyRoles.REP)), mongo, tag):
                     msg = f"Errore durante l'aggiornamento del clan `{tag}`. Controllare il terminale e/o log."
                     await inter.channel.send(msg)
                     mongo.insert_player(

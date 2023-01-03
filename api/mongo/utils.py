@@ -1,4 +1,3 @@
-# Object used for the database collection.
 from enum import Enum
 
 
@@ -6,6 +5,7 @@ class DBCollections(str, Enum):
     CONFIG = "config"
     CLANS = "clans"
     PLAYERS = "players"
+    RANK = "rank"
 
     def __str__(self) -> str:
         return self.value

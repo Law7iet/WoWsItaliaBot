@@ -13,6 +13,15 @@ class LeagueType(Enum):
 
     def __str__(self):
         match self.value:
+            case 0: return "hurricane"
+            case 1: return "typhoon"
+            case 2: return "storm"
+            case 3: return "gale"
+            case 4: return "squall"
+            case _: return ""
+
+    def nome(self) -> str:
+        match self.value:
             case 0: return "Uragano"
             case 1: return "Tifone"
             case 2: return "Tempesta"
@@ -20,7 +29,7 @@ class LeagueType(Enum):
             case 4: return "Temporale"
             case _: return ""
 
-    def color(self):
+    def color(self) -> str:
         match self.value:
             case 0: return ":purple_square:"
             case 1: return ":green_square:"

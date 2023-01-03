@@ -1,7 +1,24 @@
 from enum import Enum
 
 
-class RolesEnum(Enum):
+class MyChannels(Enum):
+    TXT_LOG_EVENT = 681962602657873990
+    TXT_TESTING = 953598226160836618
+    TXT_ADMIN = 696853218642231346
+
+    TXT_PODIO_CUP = 818856265237266473
+    TXT_PODIO_LEAGUE = 779449057600602123
+    TXT_CLASSIFICA_CB = 847179325349429258
+    TXT_DEV_BLOG = 696853825247772733
+
+    def __str__(self):
+        return str(self.value)
+
+    def __int__(self):
+        return self.value
+
+
+class MyRoles(Enum):
     ADMIN = 379688107433525271
     CC = 408628827737161728
     CM = 430713251085418517
@@ -18,8 +35,8 @@ class RolesEnum(Enum):
     WOWS_ITALIA = 780427147658919946
     BOT = 439020331039064064
 
-    def __str__(self) -> str:
+    def __str__(self):
         return str(self.value)
 
-    def __int__(self) -> int:
+    def __int__(self):
         return self.value

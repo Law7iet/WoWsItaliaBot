@@ -5,12 +5,12 @@ from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
 
 from api.mongo.api import ApiMongoDB
+from api.mongo.utils import ConfigKeys
 from api.wows.api import cb_ranking
-from models.my_class.clan import Clan
-from models.my_enum.database_enum import ConfigKeys
-from models.my_enum.league_type_enum import LeagueType
-from models.my_enum.roles_enum import RolesEnum
-from models.my_enum.channels_enum import ChannelsEnum
+from models.clan import Clan
+from models.enum.discord_id import MyChannels, MyRoles
+from models.enum.league_type import LeagueType
+from models.enum.squad_type import SquadType
 from utils.functions import align, convert_string_to_datetime, check_role, is_debugging
 
 
@@ -38,18 +38,18 @@ class ClanBattle(commands.Cog):
             for element in data:
                 if str(element["season_number"]) == str(config[str(ConfigKeys.CB_CURRENT_SEASON)]):
                     promotion = []
-                    # Compute squad (str)
+                    # Compute squad (SquadType)
                     match element["team_number"]:
-                        case 1: squad = "A"
-                        case 2: squad = "B"
+                        case 1: squad = SquadType.ALPHA
+                        case 2: squad = SquadType.BRAVO
                         case _: continue
                     # Compute tag (str)
                     tag = italian_clan["tag"]
                     # Check if a clan is inactive in the clan battles
                     if element["battles_count"] == 0:
                         continue
-                    # Compute win_rate (str)
-                    win_rate = f"{(element['wins_count'] / element['battles_count'] * 100):.2f}%"
+                    # Compute win_rate (float)
+                    win_rate = element['wins_count'] / element['battles_count'] * 100
                     # Compute battles (int)
                     battles = element["battles_count"]
                     # Compute league (LeagueType)
@@ -62,7 +62,7 @@ class ClanBattle(commands.Cog):
                         case _: continue
                     # Compute division (int)
                     division = element["division"]
-                    # Compute division (int)
+                    # Compute score (int)
                     score = element["division_rating"]
                     # Compute promotion (list(str))
                     if element["stage"]:
@@ -121,7 +121,7 @@ class ClanBattle(commands.Cog):
             inter: ApplicationCommandInteraction,
             season: int = commands.Param(name="stagione")
     ) -> None:
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, MyRoles.ADMIN):
             await inter.response.send_message("Non hai i permessi.")
         else:
             msg = f"**Errore** `set_season(inter, {season})`\nControllare il terminale e/o log."
@@ -147,7 +147,7 @@ class ClanBattle(commands.Cog):
             s_date: str = commands.Param(name="data-inizio", description="Formato AAAA-MM-GG."),
             e_date: str = commands.Param(name="data-fine", description="Formato AAAA-MM-GG.")
     ) -> None:
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, MyRoles.ADMIN):
             await inter.response.send_message("Non hai i permessi.")
         else:
             await inter.response.defer()
@@ -178,43 +178,43 @@ class ClanBattle(commands.Cog):
                 else:
                     await inter.send(error)
 
-	@commands.slash_command(name="calcola-classifica", description="Genera la classifica delle Clan Battle.")
+    @commands.slash_command(name="calcola-classifica", description="Genera la classifica delle Clan Battle.")
     async def get_ranking(
             self,
             inter: ApplicationCommandInteraction,
             number: int = commands.Param(default=0, ge=0)
     ) -> None:
-		if not await check_role(inter, RolesEnum.ADMIN):
-			await inter.send("Non hai i permessi.")
-			return
-		try:
-			await inter.response.defer()
-			mongo_config = self.api_mongo.get_config()
-			x = self.make_ranking(mongo_config)
-			pos = 1
-			league_index = 0
-			if self.debugging:
-				channel = self.bot.get_channel(int(ChannelsEnum.TXT_TESTING))
-			else:
-				channel = self.bot.get_channel(int(ChannelsEnum.TXT_CLASSIFICA_CB))
-			message_list = []
-			# Compute the progressive day of CB
-			start = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_STARTING_DAY)])
-			end = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_ENDING_DAY)])
-			today = (datetime.datetime.now() + datetime.timedelta(days=1)).date()
-			totalCount = 0
-			index = 0
-			for d_ord in range(start.toordinal(), end.toordinal()):
-				d = datetime.date.fromordinal(d_ord)
-				if d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6:
-					totalCount += 1
-					if d < today:
-						index += 1
-			if number > totalCount:
-				await inter.send("Numero progressivo maggiore del numero delle giornate totali")
-				return
-			if number != 0:
-				index = number
+        if not await check_role(inter, MyRoles.ADMIN):
+            await inter.send("Non hai i permessi.")
+            return
+        try:
+            await inter.response.defer()
+            mongo_config = self.api_mongo.get_config()
+            x = self.make_ranking(mongo_config)
+            pos = 1
+            league_index = 0
+            if self.debugging:
+                channel = self.bot.get_channel(int(MyChannels.TXT_TESTING))
+            else:
+                channel = self.bot.get_channel(int(MyChannels.TXT_CLASSIFICA_CB))
+            message_list = []
+            # Compute the progressive day of CB
+            start = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_STARTING_DAY)])
+            end = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_ENDING_DAY)])
+            today = (datetime.datetime.now() + datetime.timedelta(days=1)).date()
+            totalCount = 0
+            index = 0
+            for d_ord in range(start.toordinal(), end.toordinal()):
+                d = datetime.date.fromordinal(d_ord)
+                if d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6:
+                    totalCount += 1
+                    if d < today:
+                        index += 1
+            if number > totalCount:
+                await inter.send("Numero progressivo maggiore del numero delle giornate totali")
+                return
+            if number != 0:
+                index = number
             day_message = f"\nGiornata {index} di {totalCount}\n"
             if today < start.date():
                 msg = f"La data odierna è minore della data di inizio `{start.strftime('%d/%m/%Y')}`."
@@ -237,8 +237,8 @@ class ClanBattle(commands.Cog):
                     message = message + "\n```\n### Clan    - WinRate - Btl - Score - Promo\n"
                     for clan in division:
                         body = align(str(pos), 3, "right") + " "
-                        body = body + align(clan.tag, 5, "left") + ' ' + clan.squad + " - "
-                        body = body + align(clan.win_rate, 7, "right") + " - "
+                        body = body + align(clan.tag, 5, "left") + f" clan.squad - "
+                        body = body + align(f"{clan.win_rate:.2f}%", 7, "right") + " - "
                         body = body + align(str(clan.battles), 3, "right") + " -   "
                         body = body + align(str(clan.score), 2, "right") + "  - "
                         body = body + clan.convert_promo_to_string()

@@ -1,10 +1,9 @@
 from disnake import ApplicationCommandInteraction, Attachment
 from disnake.ext import commands
 
-from models.my_enum.roles_enum import RolesEnum
-from models.my_enum.channels_enum import ChannelsEnum
+from models.enum.discord_id import MyChannels, MyRoles
+from models.modal_podium import ModalPodium
 from utils.functions import check_role, is_debugging
-from utils.modal import ModalPodium
 
 
 class TournamentRanking(commands.Cog):
@@ -21,7 +20,7 @@ class TournamentRanking(commands.Cog):
         pos: str = commands.Param(name="posizione", choices=["Primo", "Secondo", "Terzo", "Partecipante"]),
         image: Attachment = commands.Param(name="immagine")
     ) -> None:
-        if not await check_role(inter, RolesEnum.ADMIN):
+        if not await check_role(inter, MyRoles.ADMIN):
             await inter.send("Non hai i permessi.")
             return
         if not image.content_type:
@@ -35,15 +34,15 @@ class TournamentRanking(commands.Cog):
             await inter.send("Il numero dell'edizione dev'essere maggiore di 0.")
             return
         if self.debugging:
-            channel = inter.guild.get_channel(int(ChannelsEnum.TXT_TESTING))
+            channel = inter.guild.get_channel(int(MyChannels.TXT_TESTING))
         else:
             match tournament:
                 case "Italian League":
-                    channel = inter.guild.get_channel(int(ChannelsEnum.TXT_PODIO_LEAGUE))
+                    channel = inter.guild.get_channel(int(MyChannels.TXT_PODIO_LEAGUE))
                 case "Italian Cup":
-                    channel = inter.guild.get_channel(int(ChannelsEnum.TXT_PODIO_CUP))
+                    channel = inter.guild.get_channel(int(MyChannels.TXT_PODIO_CUP))
                 case _:
-                    channel = inter.guild.get_channel(int(ChannelsEnum.TXT_TESTING))
+                    channel = inter.guild.get_channel(int(MyChannels.TXT_TESTING))
         try:
             await inter.response.send_modal(modal=ModalPodium(channel, tournament, edition, pos, image))
         except Exception as error:
