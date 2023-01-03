@@ -178,34 +178,43 @@ class ClanBattle(commands.Cog):
                 else:
                     await inter.send(error)
 
-    @commands.slash_command(name="calcola-classifica", description="Genera la classifica delle Clan Battle.")
-    async def get_ranking(self, inter: ApplicationCommandInteraction) -> None:
-        if not await check_role(inter, RolesEnum.ADMIN):
-            await inter.send("Non hai i permessi.")
-            return
-        try:
-            await inter.response.defer()
-            mongo_config = self.api_mongo.get_config()
-            x = self.make_ranking(mongo_config)
-            pos = 1
-            league_index = 0
-            if self.debugging:
-                channel = self.bot.get_channel(int(ChannelsEnum.TXT_TESTING))
-            else:
-                channel = self.bot.get_channel(int(ChannelsEnum.TXT_CLASSIFICA_CB))
-            message_list = []
-            # Compute the progressive day of CB
-            start = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_STARTING_DAY)])
-            end = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_ENDING_DAY)])
-            today = (datetime.datetime.now() + datetime.timedelta(days=1)).date()
-            totalCount = 0
-            index = 0
-            for d_ord in range(start.toordinal(), end.toordinal()):
-                d = datetime.date.fromordinal(d_ord)
-                if d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6:
-                    totalCount += 1
-                    if d < today:
-                        index += 1
+	@commands.slash_command(name="calcola-classifica", description="Genera la classifica delle Clan Battle.")
+    async def get_ranking(
+            self,
+            inter: ApplicationCommandInteraction,
+            number: int = commands.Param(default=0, ge=0)
+    ) -> None:
+		if not await check_role(inter, RolesEnum.ADMIN):
+			await inter.send("Non hai i permessi.")
+			return
+		try:
+			await inter.response.defer()
+			mongo_config = self.api_mongo.get_config()
+			x = self.make_ranking(mongo_config)
+			pos = 1
+			league_index = 0
+			if self.debugging:
+				channel = self.bot.get_channel(int(ChannelsEnum.TXT_TESTING))
+			else:
+				channel = self.bot.get_channel(int(ChannelsEnum.TXT_CLASSIFICA_CB))
+			message_list = []
+			# Compute the progressive day of CB
+			start = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_STARTING_DAY)])
+			end = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_ENDING_DAY)])
+			today = (datetime.datetime.now() + datetime.timedelta(days=1)).date()
+			totalCount = 0
+			index = 0
+			for d_ord in range(start.toordinal(), end.toordinal()):
+				d = datetime.date.fromordinal(d_ord)
+				if d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6:
+					totalCount += 1
+					if d < today:
+						index += 1
+			if number > totalCount:
+				await inter.send("Numero progressivo maggiore del numero delle giornate totali")
+				return
+			if number != 0:
+				index = number
             day_message = f"\nGiornata {index} di {totalCount}\n"
             if today < start.date():
                 msg = f"La data odierna è minore della data di inizio `{start.strftime('%d/%m/%Y')}`."
@@ -224,7 +233,7 @@ class ClanBattle(commands.Cog):
                 for division in league:
                     message = f"{LeagueType(league_index).color()} **Lega {LeagueType(league_index)}**"
                     if league_index != 0:
-                        message = message + f"** - Divisione {division_index}**"
+                        message = message + f" - Divisione {division_index}"
                     message = message + "\n```\n### Clan    - WinRate - Btl - Score - Promo\n"
                     for clan in division:
                         body = align(str(pos), 3, "right") + " "
