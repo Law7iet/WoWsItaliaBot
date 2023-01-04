@@ -24,7 +24,7 @@ class ClanBattle(commands.Cog):
         config_file = self.api_mongo.get_config()
         return config_file[str(config_key)]
 
-    def make_ranking(self, config: dict) -> list[list[[]]]:
+    def make_ranking(self, season: int, day: int, date: str) -> list[list[[]]]:
         # Each element represent a league.
         clan_battle_ranking = [
             [[]],           # Hurricane (1 division)
@@ -36,7 +36,7 @@ class ClanBattle(commands.Cog):
         for italian_clan in self.api_mongo.get_clans_by_name(""):
             data = cb_ranking(int(italian_clan["id"]), self.debugging)
             for element in data:
-                if str(element["season_number"]) == str(config[str(ConfigKeys.CB_CURRENT_SEASON)]):
+                if str(element["season_number"]) == str(season):
                     promotion = []
                     # Compute squad (SquadType)
                     match element["team_number"]:
@@ -72,8 +72,12 @@ class ClanBattle(commands.Cog):
                                 case "victory": promotion.append("+")
                                 case "defeat": promotion.append("-")
                                 case _: continue
-                    # Create a Clan instance
+                    # Create a clan instance
                     clan = Clan(tag, squad, win_rate, battles, league, division, score, promotion)
+                    # Add the clan data in the rank collection
+                    inserted_rank = self.api_mongo.insert_rank(clan, season, day, date)
+                    if not inserted_rank:
+                        continue
                     # Insert the clan to the correct league and division
                     if clan.league == LeagueType.HURRICANE:
                         clan_battle_ranking[int(clan.league)][0].append(clan)
@@ -190,7 +194,6 @@ class ClanBattle(commands.Cog):
         try:
             await inter.response.defer()
             mongo_config = self.api_mongo.get_config()
-            x = self.make_ranking(mongo_config)
             pos = 1
             league_index = 0
             if self.debugging:
@@ -225,9 +228,11 @@ class ClanBattle(commands.Cog):
                 await channel.send(msg)
                 day_message = '\n'
             # Compute the content
-            title = f"**Risultati Clan Battle Season {mongo_config[str(ConfigKeys.CB_CURRENT_SEASON)]}**{day_message}"
+            season = mongo_config[str(ConfigKeys.CB_CURRENT_SEASON)]
+            title = f"**Risultati Clan Battle Season {season}**{day_message}"
             message_list.append(title)
             # Add clans in the message
+            x = self.make_ranking(season, index, today.strftime('%Y-%m-%d'))
             for league in x:
                 division_index = 1
                 for division in league:
@@ -237,7 +242,7 @@ class ClanBattle(commands.Cog):
                     message = message + "\n```\n### Clan    - WinRate - Btl - Score - Promo\n"
                     for clan in division:
                         body = align(str(pos), 3, "right") + " "
-                        body = body + align(clan.tag, 5, "left") + f" clan.squad - "
+                        body = body + align(clan.tag, 5, "left") + f" {clan.squad} - "
                         body = body + align(f"{clan.win_rate:.2f}%", 7, "right") + " - "
                         body = body + align(str(clan.battles), 3, "right") + " -   "
                         body = body + align(str(clan.score), 2, "right") + "  - "

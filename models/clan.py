@@ -44,20 +44,16 @@ class Clan:
         else:
             return '[' + promotion[:-2] + ']'
 
-    def convert_to_dict(self, clan_tag: str, season: int, day: int, date: str) -> dict:
+    def convert_to_dict(self) -> dict:
         """
-        Convert the class to a dict, according to the rank collection of the WoWsItalia database.
+        Convert the class to a dict.
         Returns:
             The dictionary.
         """
         return {
-            "clan": clan_tag,
-            "season": season,
-            "day": day,
-            "date": date,
             "squad": str(self.squad),
             "battles": self.battles,
-            "win-rate": self.win_rate,
+            "winrate": self.win_rate,
             "league": int(self.league),
             "division": self.division,
             "score": self.score,

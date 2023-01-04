@@ -5,7 +5,7 @@ class DBCollections(str, Enum):
     CONFIG = "config"
     CLANS = "clans"
     PLAYERS = "players"
-    RANK = "rank"
+    RANK = "ranks"
 
     def __str__(self) -> str:
         return self.value
