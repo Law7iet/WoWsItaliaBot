@@ -5,6 +5,7 @@ from pymongo import MongoClient, errors
 
 from api.mongo.utils import DBCollections
 from settings.config import data
+from models.clan import Clan
 from utils.functions import get_config_id
 
 
@@ -482,4 +483,29 @@ class ApiMongoDB:
                 {'wows': wows_id}
             ]}
         )
-		
+
+    ####################################################################################################################
+    #                                               Rank Collection API                                                #
+    ####################################################################################################################
+
+    def get_rank(self, clan_id: str, squad: str, season: int, day: int, date: str):
+        query = {
+            "$and": [{"clan": clan_id}, {"squad": squad}, {"season": season}, {"day": day}, {"date": date}]
+        }
+        return self.__get_element(DBCollections.PLAYERS, query)
+
+    def insert_rank(self, clan: Clan, season: int, day: int, date: str) -> dict:
+        clan_id = self.get_clan_by_tag(clan.tag)["id"]
+        searched_rank = self.get_rank(clan_id, str(clan.squad), season, day, date)
+        if searched_rank:
+            print("Rank già nel DB")
+            print(f"Clan: {clan.tag} ({clan_id})")
+            print(f"Data: stagione {season}, giornata {day} ({date})")
+            return {}
+        else:
+            rank_data = clan.convert_to_dict()
+            rank_data["clan"] = clan_id
+            rank_data["season"] = season
+            rank_data["day"] = day
+            rank_data["date"] = date
+            return self.__insert_element(DBCollections.RANK, rank_data)
