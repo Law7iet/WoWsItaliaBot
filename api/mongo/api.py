@@ -167,7 +167,7 @@ class ApiMongoDB:
 
     def __get_clan(self, key: str, value: str) -> dict:
         """
-        Returns the clan's data of the clan that its `key` matches with `value`.
+        Returns the clan's data of the first clan that its `key` matches with `value`.
 
         Args:
             key: The dictionary's key.
@@ -195,7 +195,7 @@ class ApiMongoDB:
 
     def __get_player(self, query: dict) -> dict:
         """
-        Returns the player's data that match with `query`.
+        Returns the player's data of the first player that matches with `query`.
 
         Args:
             query: The query.
@@ -205,6 +205,32 @@ class ApiMongoDB:
              If an error occurs or if no player is found, it returns an empty dictionary.
         """
         return self.__get_element(DBCollections.PLAYERS, query)
+
+    def __get_rank(self, query: dict) -> dict:
+        """
+        Returns the rank's data of the first rank that matches with `query`.
+
+        Args:
+            query: The query.
+
+        Returns:
+            The rank data.
+             If an error occurs or if no rank is found, it returns an empty dictionary.
+        """
+        return self.__get_element(DBCollections.RANK, query)
+
+    def __get_ranks(self, query: dict) -> list:
+        """
+        Returns the rank's data of the ranks that match with `query`.
+
+        Args:
+            query: The query.
+
+        Returns:
+            A list of ranks.
+             If an error occurs or if no rank is found, it returns an empty list.
+        """
+        return self.__get_elements(DBCollections.RANK, query)
 
     ####################################################################################################################
     #                                                    PUBLIC API                                                    #
@@ -488,24 +514,48 @@ class ApiMongoDB:
     #                                               Rank Collection API                                                #
     ####################################################################################################################
 
-    def get_rank(self, clan_id: str, squad: str, season: int, day: int, date: str):
-        query = {
-            "$and": [{"clan": clan_id}, {"squad": squad}, {"season": season}, {"day": day}, {"date": date}]
-        }
-        return self.__get_element(DBCollections.PLAYERS, query)
+    def get_rank(self, clan_id: str, squad: str, season: int, day: int) -> dict:
+        """
+        Returns the player's data that WoWs' id matches with `wows_id`.
 
-    def insert_rank(self, clan: Clan, season: int, day: int, date: str) -> dict:
+        Args:
+            clan_id: the clan's identifier.
+            squad: the clan's squad.
+            season: the season of clan battle.
+            day: the day of the clan battle.
+
+        Returns:
+            The rank data.
+             If the rank is not found or if an error occurs, it returns an empty dictionary.
+        """
+        query = {"$and": [{"clan": clan_id}, {"squad": squad}, {"season": season}, {"day": day}]}
+        return self.__get_rank(query)
+
+    def insert_rank(self, season: int, day: int, date: str, clan: Clan) -> dict:
+        """
+        Inserts a rank in the collection.
+         If a rank with the same season, day, clan and squad exists, it updates the old rank.
+
+        Args:
+            season: The season of clan battle.
+            day: The day of clan battle.
+            date: The date of the rank.
+            clan: The clan's data.
+
+        Returns:
+            The inserted data.
+             If an error occurs, it returns an empty dictionary.
+        """
         clan_id = self.get_clan_by_tag(clan.tag)["id"]
-        searched_rank = self.get_rank(clan_id, str(clan.squad), season, day, date)
+        rank_data = {
+            "season": season,
+            "day": day,
+            "date": date,
+            "clan": clan_id
+        }
+        rank_data = rank_data | clan.convert_to_dict()
+        searched_rank = self.get_rank(clan_id, str(clan.squad), season, day)
         if searched_rank:
-            print("Rank già nel DB")
-            print(f"Clan: {clan.tag} ({clan_id})")
-            print(f"Data: stagione {season}, giornata {day} ({date})")
-            return {}
+            return self.__update_element(DBCollections.RANK, {"_id": searched_rank["_id"]}, rank_data)
         else:
-            rank_data = clan.convert_to_dict()
-            rank_data["clan"] = clan_id
-            rank_data["season"] = season
-            rank_data["day"] = day
-            rank_data["date"] = date
             return self.__insert_element(DBCollections.RANK, rank_data)

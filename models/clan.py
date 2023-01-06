@@ -50,7 +50,7 @@ class Clan:
         Returns:
             The dictionary.
         """
-        return {
+        data = {
             "squad": str(self.squad),
             "battles": self.battles,
             "winrate": self.win_rate,
@@ -59,3 +59,12 @@ class Clan:
             "score": self.score,
             "raw": self.raw
         }
+        if self.promotion:
+            promotion = []
+            for btl in self.promotion:
+                if btl == "+":
+                    promotion.append(True)
+                else:
+                    promotion.append(False)
+            data["promotion"] = promotion
+        return data
