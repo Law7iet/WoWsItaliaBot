@@ -9,3 +9,8 @@ class SquadType(IntEnum):
         match self.value:
             case 0: return "alpha"
             case 1: return "bravo"
+
+    def nome(self):
+        match self.value:
+            case 0: return "A"
+            case 1: return "B"

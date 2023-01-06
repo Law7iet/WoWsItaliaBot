@@ -75,7 +75,7 @@ class ClanBattle(commands.Cog):
                     # Create a clan instance
                     clan = Clan(tag, squad, win_rate, battles, league, division, score, promotion)
                     # Add the clan data in the rank collection
-                    inserted_rank = self.api_mongo.insert_rank(clan, season, day, date)
+                    inserted_rank = self.api_mongo.insert_rank(season, day, date, clan)
                     if not inserted_rank:
                         continue
                     # Insert the clan to the correct league and division
@@ -204,13 +204,14 @@ class ClanBattle(commands.Cog):
             # Compute the progressive day of CB
             start = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_STARTING_DAY)])
             end = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_ENDING_DAY)])
-            today = (datetime.datetime.now() + datetime.timedelta(days=1)).date()
+            today = datetime.datetime.now()
             totalCount = 0
             index = 0
             for d_ord in range(start.toordinal(), end.toordinal()):
-                d = datetime.date.fromordinal(d_ord)
+                d = datetime.datetime.fromordinal(d_ord)
                 if d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6:
                     totalCount += 1
+                    d = d.replace(hour=23, minute=20)
                     if d < today:
                         index += 1
             if number > totalCount:
@@ -219,30 +220,29 @@ class ClanBattle(commands.Cog):
             if number != 0:
                 index = number
             day_message = f"\nGiornata {index} di {totalCount}\n"
-            if today < start.date():
+            if today < start:
                 msg = f"La data odierna è minore della data di inizio `{start.strftime('%d/%m/%Y')}`."
                 await channel.send(msg)
                 day_message = '\n'
-            if today > end.date():
+            if today > end:
                 msg = f"La data odierna è maggiore della data di fine `{end.strftime('%d/%m/%Y')}`."
                 await channel.send(msg)
                 day_message = '\n'
             # Compute the content
             season = mongo_config[str(ConfigKeys.CB_CURRENT_SEASON)]
             title = f"**Risultati Clan Battle Season {season}**{day_message}"
-            message_list.append(title)
             # Add clans in the message
-            x = self.make_ranking(season, index, today.strftime('%Y-%m-%d'))
+            x = self.make_ranking(season, index, today.strftime('%Y-%m-%d, %H:%M:%S'))
             for league in x:
                 division_index = 1
                 for division in league:
-                    message = f"{LeagueType(league_index).color()} **Lega {LeagueType(league_index)}**"
+                    message = f"{LeagueType(league_index).color()} **Lega {LeagueType(league_index).nome()}**"
                     if league_index != 0:
                         message = message + f" - Divisione {division_index}"
                     message = message + "\n```\n### Clan    - WinRate - Btl - Score - Promo\n"
                     for clan in division:
                         body = align(str(pos), 3, "right") + " "
-                        body = body + align(clan.tag, 5, "left") + f" {clan.squad} - "
+                        body = body + align(clan.tag, 5, "left") + f" {clan.squad.nome()} - "
                         body = body + align(f"{clan.win_rate:.2f}%", 7, "right") + " - "
                         body = body + align(str(clan.battles), 3, "right") + " -   "
                         body = body + align(str(clan.score), 2, "right") + "  - "
@@ -255,6 +255,9 @@ class ClanBattle(commands.Cog):
                     division_index = division_index + 1
                 league_index = league_index + 1
             # Send and publish the message
+            msg = await channel.send(title)
+            await msg.publish()
+            time.sleep(10)
             while len(message_list) != 0:
                 flag = False
                 if len(message_list) > 1:

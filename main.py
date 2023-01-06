@@ -44,7 +44,7 @@ if __name__ == "__main__":
 	
 	# Run bot
 	try:
-		keep_alive()
+		# keep_alive()
 		bot.run(config.data["DISCORD_TOKEN"])
 	except HTTPException as e:
 		if e.status == 429:
