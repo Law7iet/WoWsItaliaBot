@@ -11,7 +11,7 @@ class TournamentRanking(commands.Cog):
         self.bot = bot
         self.debugging = is_debugging()
 
-    @commands.slash_command()
+    @commands.slash_command(name="podio")
     async def podium(
         self,
         inter: ApplicationCommandInteraction,

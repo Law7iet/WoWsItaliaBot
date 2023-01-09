@@ -92,97 +92,94 @@ class ClanBattle(commands.Cog):
         return clan_battle_ranking
 
     @commands.slash_command(
-        name="stagione-clan-battle",
-        description="Ritorna il numero della stagione delle clan battle salvato nel database."
+        name="clan-battle-stagione",
+        description="Vedi o imposta il numero della stagione delle clan battle salvato nel database."
     )
-    async def get_season(self, inter: ApplicationCommandInteraction) -> None:
-        value = await self.getter(ConfigKeys.CB_CURRENT_SEASON)
-        if value:
-            await inter.response.send_message(f"La stagione delle clan battle è: `{value}`.")
-        else:
-            await inter.response.send_message(f"**Errore** `get_season(inter)`\nValore `{value}` incorretto.")
-
-    @commands.slash_command(
-        name="date-clan-battle",
-        description="Ritorna le date delle clan battle salvato nel database."
-    )
-    async def get_days(self, inter: ApplicationCommandInteraction):
-        start = await self.getter(ConfigKeys.CB_STARTING_DAY)
-        end = await self.getter(ConfigKeys.CB_ENDING_DAY)
-        if start and end:
-            await inter.response.send_message(f"Le date delle clan battle sono: `{start}` e `{end}`.")
-        elif not start:
-            await inter.response.send_message(f"**Errore** `get_days(inter)`\nData d\'inizio `{start}` non valida.")
-        elif not end:
-            await inter.response.send_message(f"**Errore** `get_days(inter)`\nData d\'inizio `{end}` non valida.")
-
-    @commands.slash_command(
-        name="imposta-stagione-clan-battle",
-        description="Imposta il numero della stagione delle clan battle."
-    )
-    async def set_season(
+    async def season(
             self,
             inter: ApplicationCommandInteraction,
-            season: int = commands.Param(name="stagione")
+            action: str = commands.Param(name="azione", choices=["Vedi", "Imposta"]),
+            season: int = commands.Param(name="stagione", default=0)
     ) -> None:
-        if not await check_role(inter, MyRoles.ADMIN):
-            await inter.response.send_message("Non hai i permessi.")
-        else:
-            msg = f"**Errore** `set_season(inter, {season})`\nControllare il terminale e/o log."
-            try:
-                if season <= 0:
-                    return
-                data = {str(ConfigKeys.CB_CURRENT_SEASON): season}
-                if self.api_mongo.update_config(data):
-                    await inter.response.send_message(f"Impostato la stagione: `{season}`.")
-                else:
-                    await inter.response.send_message(msg)
-            except Exception as error:
-                print(f"set_season exception says: {error}")
-                await inter.response.send_message(msg)
-
-    @commands.slash_command(
-        name="imposta-date-clan-battle",
-        description="Imposta le date di inizio e fine clan battle: AAAA-MM-GG."
-    )
-    async def set_dates(
-            self,
-            inter: ApplicationCommandInteraction,
-            s_date: str = commands.Param(name="data-inizio", description="Formato AAAA-MM-GG."),
-            e_date: str = commands.Param(name="data-fine", description="Formato AAAA-MM-GG.")
-    ) -> None:
-        if not await check_role(inter, MyRoles.ADMIN):
-            await inter.response.send_message("Non hai i permessi.")
-        else:
-            await inter.response.defer()
-            # Check params' format
-            try:
-                start = str(s_date).split("-")
-                end = str(e_date).split("-")
-                start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]))
-                end = datetime.datetime(int(end[0]), int(end[1]), int(end[2]))
-            except (IndexError, ValueError):
-                msg = f"**Errore** `set_dates(inter, {s_date}, {e_date})`\n"
-                msg = f"{msg}\nUtilizzare la sintassi `AAAA-MM-GG` per le date."
-                await inter.send(msg)
+        if action == "Vedi":
+            value = await self.getter(ConfigKeys.CB_CURRENT_SEASON)
+            if value:
+                await inter.response.send_message(f"La stagione delle clan battle è: `{value}`.")
             else:
-                # Update date
-                data1 = {str(ConfigKeys.CB_STARTING_DAY): start.strftime("%Y-%m-%d")}
-                data2 = {str(ConfigKeys.CB_ENDING_DAY): end.strftime("%Y-%m-%d")}
-                res1 = self.api_mongo.update_config(data1)
-                res2 = self.api_mongo.update_config(data2)
-                # Output
-                error = f"\n**Errore** `set_dates(inter, {s_date}, {e_date})`\nControllare il terminale e/o log."
-                if res1 and res2:
-                    await inter.send(f"Impostato le date `{s_date}` e `{e_date}`.")
-                elif res1:
-                    await inter.send(f"Impostato la data di inizio clan battle `{s_date}`.{error}")
-                elif res2:
-                    await inter.send(f"Impostato la data di fine clan battle `{e_date}`.{error}")
-                else:
-                    await inter.send(error)
+                await inter.response.send_message(f"**Errore** `get_season(inter)`\nValore `{value}` incorretto.")
+        else:
+            if not await check_role(inter, MyRoles.ADMIN):
+                await inter.response.send_message("Non hai i permessi.")
+            else:
+                msg = f"**Errore** `set_season(inter, {season})`\nControllare il terminale e/o log."
+                try:
+                    if season <= 0:
+                        return
+                    data = {str(ConfigKeys.CB_CURRENT_SEASON): season}
+                    if self.api_mongo.update_config(data):
+                        await inter.response.send_message(f"Impostato la stagione: `{season}`.")
+                    else:
+                        await inter.response.send_message(msg)
+                except Exception as error:
+                    print(f"set_season exception says: {error}")
+                    await inter.response.send_message(msg)
 
-    @commands.slash_command(name="calcola-classifica", description="Genera la classifica delle Clan Battle.")
+    @commands.slash_command(
+        name="clan-battle-date",
+        description="Vedi o imposta le date delle clan battle salvato nel database."
+    )
+    async def get_days(
+            self,
+            inter: ApplicationCommandInteraction,
+            action: str = commands.Param(name="azione", choices=["Vedi", "Imposta"]),
+            s_date: str = commands.Param(name="data-inizio", description="Formato AAAA-MM-GG.", default=""),
+            e_date: str = commands.Param(name="data-fine", description="Formato AAAA-MM-GG.", default="")
+    ) -> None:
+        if action == "Vedi":
+            start = await self.getter(ConfigKeys.CB_STARTING_DAY)
+            end = await self.getter(ConfigKeys.CB_ENDING_DAY)
+            if start and end:
+                await inter.response.send_message(f"Le date delle clan battle sono: `{start}` e `{end}`.")
+            elif not start:
+                await inter.response.send_message(f"**Errore** `get_days(inter)`\nData d\'inizio `{start}` non valida.")
+            elif not end:
+                await inter.response.send_message(f"**Errore** `get_days(inter)`\nData d\'inizio `{end}` non valida.")
+        else:
+            if not await check_role(inter, MyRoles.ADMIN):
+                await inter.response.send_message("Non hai i permessi.")
+            else:
+                await inter.response.defer()
+                # Check params' format
+                try:
+                    start = str(s_date).split("-")
+                    end = str(e_date).split("-")
+                    start = datetime.datetime(int(start[0]), int(start[1]), int(start[2]))
+                    end = datetime.datetime(int(end[0]), int(end[1]), int(end[2]))
+                except (IndexError, ValueError):
+                    msg = f"**Errore** `set_dates(inter, {s_date}, {e_date})`\n"
+                    msg = f"{msg}\nUtilizzare la sintassi `AAAA-MM-GG` per le date."
+                    await inter.send(msg)
+                else:
+                    # Update date
+                    data1 = {str(ConfigKeys.CB_STARTING_DAY): start.strftime("%Y-%m-%d")}
+                    data2 = {str(ConfigKeys.CB_ENDING_DAY): end.strftime("%Y-%m-%d")}
+                    res1 = self.api_mongo.update_config(data1)
+                    res2 = self.api_mongo.update_config(data2)
+                    # Output
+                    error = f"\n**Errore** `set_dates(inter, {s_date}, {e_date})`\nControllare il terminale e/o log."
+                    if res1 and res2:
+                        await inter.send(f"Impostato le date `{s_date}` e `{e_date}`.")
+                    elif res1:
+                        await inter.send(f"Impostato la data di inizio clan battle `{s_date}`.{error}")
+                    elif res2:
+                        await inter.send(f"Impostato la data di fine clan battle `{e_date}`.{error}")
+                    else:
+                        await inter.send(error)
+
+    @commands.slash_command(
+        name="clan-battle-classifica",
+        description="Genera la classifica delle Clan Battle."
+    )
     async def get_ranking(
             self,
             inter: ApplicationCommandInteraction,
