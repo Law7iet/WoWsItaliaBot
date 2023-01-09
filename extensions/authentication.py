@@ -17,7 +17,7 @@ class Authentication(commands.Cog):
         self.api_mongo = ApiMongoDB()
         self.api_wows = WoWsSession(config.data["APPLICATION_ID"], is_debugging())
 
-    @commands.slash_command(name="login", description="Autentifica l'account di Discord con quello di WoWs.")
+    @commands.slash_command(name="login", description="Associa l'account di Discord con quello di WoWs.")
     async def login(self, inter: ApplicationCommandInteraction) -> None:
         msg = [
             "Il servizio utilizzerà i seguenti dati personali:",
@@ -45,7 +45,7 @@ class Authentication(commands.Cog):
         else:
             await inter.response.send_message(f"Errore del server: status `{res.status_code}`.", ephemeral=True)
 
-    @commands.slash_command(name="auth", description="Controlla e autorizza l'utente.")
+    @commands.slash_command(name="auth", description="Controlla e concede i permessi all'utente.")
     async def auth(self, inter: ApplicationCommandInteraction) -> None:
         await inter.response.defer()
         # Get the player from the database
@@ -73,7 +73,7 @@ class Authentication(commands.Cog):
             msg = f"{msg}\nPermessi negati durante la modifica dell'utente <@{inter.author.id}>."
         await inter.send(msg)
 
-    @commands.slash_command(name="logout", description="Cancella propri i dati dal database.")
+    @commands.slash_command(name="logout", description="Scollega l'account di Discord con quello di WoWs.")
     async def logout(self, inter: ApplicationCommandInteraction) -> None:
         await logout(inter, self.api_mongo)
 

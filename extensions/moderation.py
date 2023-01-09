@@ -37,7 +37,7 @@ class Moderation(commands.Cog):
             await inter.send(f"{msg}\n<@{member.id}> non è autenticato. Digita `/login`.")
             return False
 
-    @commands.slash_command(name="scrivi-messaggio", description="Scrive un messaggio embed e menziona un ruolo.")
+    @commands.slash_command(name="messaggio", description="Scrive un messaggio embed e menziona un ruolo.")
     async def write_message(
             self,
             inter: ApplicationCommandInteraction,
@@ -53,24 +53,27 @@ class Moderation(commands.Cog):
             print(error)
             await inter.send(f"**Errore** `write_message(inter, <#{channel.id}>)")
 
-    @commands.slash_command(name="aggiungi-clan", description="Aggiunge un clan nel database.")
-    async def add_clan(
+    @commands.slash_command(name="-clan", description="Aggiunge o rimuove un clan nel dabatase.")
+    async def clan(
         self,
         inter: ApplicationCommandInteraction,
-        clan_id: int,
+        action: str = commands.Param(name="azione", choices=["Aggiungi", "Rimuovi"]),
+        clan_id: int = commands.Param(name="clan-id"),
         rep_1: Member | None = commands.Param(name="rappresentante-1", default=None),
         rep_2: Member | None = commands.Param(name="rappresentante-2", default=None)
     ) -> None:
-        if not await check_role(inter, MyRoles.ADMIN):
+        if not await check_role(inter, MyRoles.MOD):
             await inter.send("Non hai i permessi.")
             return
         await inter.response.defer()
-        # Check clan's identifier
-        try:
-            clan_detail = self.api_wows.clan_detail([clan_id])[0]
-        except IndexError:
-            await inter.send("Clan ID errato.")
-        else:
+        role = inter.guild.get_role(int(MyRoles.REP))
+        if action == "Aggiungi":
+            # Check clan's identifier
+            try:
+                clan_detail = self.api_wows.clan_detail([clan_id])[0]
+            except IndexError:
+                await inter.send("Clan ID errato.")
+                return
             # Check representations
             representation = []
             for rep in [rep_1, rep_2]:
@@ -88,7 +91,6 @@ class Moderation(commands.Cog):
             })
             # Send output
             if result:
-                role = inter.guild.get_role(int(MyRoles.REP))
                 msg = "Clan " + clan_detail["tag"] + " inserito.\n"
                 if rep_1 and rep_2:
                     await rep_1.add_roles(role)
@@ -104,6 +106,25 @@ class Moderation(commands.Cog):
             else:
                 msg = f"**Error** `add_clan(inter, {clan_id}, <@{rep_1.id}>, <@{rep_2}>)`\nDatabase non aggiornato."
                 await inter.send(f"{msg} Controllare che il clan non sia già inserito e il terminale e/o log.")
+        else:
+            # Check clan's identifier
+            clan = self.api_mongo.get_clan_by_id(str(clan_id))
+            if not clan:
+                await inter.send(f"Clan `{clan_id}` non trovato nel database.")
+                return
+            # Remove clan
+            if self.api_mongo.delete_clan_by_id(str(clan_id)):
+                # Clan removed
+                # Remove representations role
+                representations = clan["representations"]
+                for rep_id in representations:
+                    rep = await inter.guild.get_member(int(rep_id))
+                    await rep.remove_roles(role)
+                msg = "Clan rimosso."
+            else:
+                # Mongo error
+                msg = "Clan non rimosso. Controllare che il clan non sia già inserito e il terminale e/o log."
+            await inter.send(msg)
 
 
 def setup(bot):
