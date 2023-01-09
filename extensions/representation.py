@@ -50,13 +50,16 @@ class Representant(commands.Cog):
         if not clan_id:
             await inter.send("Non fai parte di un clan.")
         else:
-            # Sync mongo
-            clan_mongo = await sync_clan(inter, self.api_mongo, self.api_wows, str(clan_id))
-            # Add or remove
-            if is_adding:
-                await self.add(inter, member, clan_mongo)
+            if await self.api_mongo.get_clan_by_id(str(clan_id)):
+                # Sync mongo
+                clan_mongo = await sync_clan(inter, self.api_mongo, self.api_wows, str(clan_id))
+                # Add or remove
+                if is_adding:
+                    await self.add(inter, member, clan_mongo)
+                else:
+                    await self.remove(inter, member, clan_mongo)
             else:
-                await self.remove(inter, member, clan_mongo)
+                await inter.send("Clan non registrato. Contattare un moderatore.")
 
     @commands.slash_command(name="rappresentante", description="Aggiunge o rimuove un rappresentante di un clan")
     async def representation(

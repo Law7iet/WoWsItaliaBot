@@ -53,7 +53,7 @@ class Moderation(commands.Cog):
             print(error)
             await inter.send(f"**Errore** `write_message(inter, <#{channel.id}>)")
 
-    @commands.slash_command(name="-clan", description="Aggiunge o rimuove un clan nel dabatase.")
+    @commands.slash_command(name="clan", description="Aggiunge o rimuove un clan nel dabatase.")
     async def clan(
         self,
         inter: ApplicationCommandInteraction,
