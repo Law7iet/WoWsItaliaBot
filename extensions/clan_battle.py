@@ -108,7 +108,7 @@ class ClanBattle(commands.Cog):
             else:
                 await inter.response.send_message(f"**Errore** `get_season(inter)`\nValore `{value}` incorretto.")
         else:
-            if not await check_role(inter, MyRoles.ADMIN):
+            if not await check_role(inter, MyRoles.MOD):
                 await inter.response.send_message("Non hai i permessi.")
             else:
                 msg = f"**Errore** `set_season(inter, {season})`\nControllare il terminale e/o log."
@@ -145,7 +145,7 @@ class ClanBattle(commands.Cog):
             elif not end:
                 await inter.response.send_message(f"**Errore** `get_days(inter)`\nData d\'inizio `{end}` non valida.")
         else:
-            if not await check_role(inter, MyRoles.ADMIN):
+            if not await check_role(inter, MyRoles.MOD):
                 await inter.response.send_message("Non hai i permessi.")
             else:
                 await inter.response.defer()
@@ -185,7 +185,7 @@ class ClanBattle(commands.Cog):
             inter: ApplicationCommandInteraction,
             number: int = commands.Param(default=0, ge=0)
     ) -> None:
-        if not await check_role(inter, MyRoles.ADMIN):
+        if not await check_role(inter, MyRoles.MOD):
             await inter.send("Non hai i permessi.")
             return
         try:

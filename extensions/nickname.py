@@ -67,7 +67,7 @@ class Nickname(commands.Cog):
         # Get user has AUTH
         # Check if the user has the admin role.
         await inter.response.defer()
-        if not await check_role(inter, MyRoles.ADMIN):
+        if not await check_role(inter, MyRoles.MOD):
             await inter.send("Non hai i permessi.")
             return
         # Get all the server's members
@@ -93,7 +93,7 @@ class Nickname(commands.Cog):
             if guild.get_role(int(MyRoles.REF)) in member.roles:
                 continue
             # Select who has 'marinario' role
-            if not (guild.get_role(int(MyRoles.SAILOR)) in member.roles):
+            if not (guild.get_role(int(MyRoles.AUTH)) in member.roles):
                 continue
             # Select nickname
             tmp = re.sub(r"\[.+]", "", member.display_name)
