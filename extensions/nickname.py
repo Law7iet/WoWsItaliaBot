@@ -21,46 +21,48 @@ class Nickname(commands.Cog):
     async def check_own_nickname(
             self,
             inter: ApplicationCommandInteraction,
-            nickname: str | None = commands.Param(min_length=1, max_length=28, default=None)
+            nick: str | None = commands.Param(min_length=1, max_length=28, default=None)
     ) -> None:
-        await inter.response.defer()
         if not await check_role(inter, MyRoles.AUTH):
-            await inter.send("Non sei autenticato. Digita `/login`")
+            await inter.response.send_message("Non sei autenticato. Digita `/login`")
             return
+        await inter.response.defer()
         try:
-            player_id = self.api_mongo.get_player_by_discord(str(inter.author.id))["wows_id"]
-            player = self.api_wows.player_personal_data([player_id])[0]
-        except (KeyError, IndexError):
+            player_id = self.api_mongo.get_player_by_discord(str(inter.author.id))["wows"]
+            player = self.api_wows.player_personal_data([int(player_id)])[0]
+        except (KeyError, IndexError, TypeError):
             await inter.send(f"Errore utente <@{inter.author.id}> non trovato.")
             return
         try:
             old_tag = re.search(r"\[.+]", inter.author.display_name).group(0)[1:-1]
         except AttributeError:
             old_tag = ""
-        new_nickname = player["nickname"]
+        new_nickname = player["account_name"]
         try:
             clan_id = self.api_wows.player_clan_data([player_id])[0]["clan_id"]
             clan_tag = "[" + self.api_wows.clan_detail([clan_id])[0]["tag"] + "] "
         except (KeyError, IndexError):
             clan_tag = ""
         new_nickname = clan_tag + new_nickname
-        if len(new_nickname + nickname) + 3 <= 32:
-            new_nickname = f"{new_nickname} ({nickname})"
-            if clan_tag != old_tag:
-                representation = inter.guild.get_role(int(MyRoles.REP))
-                if representation in inter.author.roles:
-                    if not await remove_representation(inter.author, representation, self.api_mongo, old_tag):
-                        await inter.send(f"Rappresentante non rimosso nel clan {old_tag} nel database.")
-                        return
-            msg = "Fatto!"
-            try:
-                await inter.author.edit(nick=new_nickname)
-            except errors.Forbidden:
-                msg = f"{msg}\nPermessi negati durante la modifica dell'utente <@{inter.author.id}>."
-            await inter.send(msg)
-        else:
-            max_length = 32 - len(new_nickname) - 3
-            await inter.send(f"Il nickname è troppo lungo. Utilizza un nickname di {max_length} caratteri.")
+        if nick:
+            if len(new_nickname + nick) + 3 <= 32:
+                new_nickname = f"{new_nickname} ({nick})"
+            else:
+                max_length = 32 - len(new_nickname) - 3
+                await inter.send(f"Il nickname è troppo lungo. Utilizza un nickname di {max_length} caratteri.")
+                return
+        if clan_tag != old_tag:
+            representation = inter.guild.get_role(int(MyRoles.REP))
+            if representation in inter.author.roles:
+                if not await remove_representation(inter.author, representation, self.api_mongo, old_tag):
+                    await inter.send(f"Rappresentante non rimosso nel clan {old_tag} nel database.")
+                    return
+        msg = "Fatto!"
+        try:
+            await inter.author.edit(nick=new_nickname)
+        except errors.Forbidden:
+            msg = f"{msg}\nPermessi negati durante la modifica dell'utente <@{inter.author.id}>."
+        await inter.send(msg)
 
     @commands.slash_command(name="mod-nickname", description="Controlla che i nickname sia corretto.")
     async def check_nickname(self, inter: ApplicationCommandInteraction):
