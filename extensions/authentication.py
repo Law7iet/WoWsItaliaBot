@@ -6,7 +6,7 @@ from disnake.ui import Button
 
 from api.mongo.api import ApiMongoDB
 from api.wows.api import WoWsSession
-from models.enum.discord_id import MyChannels
+from models.enum.discord_id import MyRoles
 from settings import config
 from utils.functions import is_debugging, logout
 
@@ -66,7 +66,7 @@ class Authentication(commands.Cog):
         # Add the role and change the player's nickname
         msg = f"Autenticazione effettuata. Benvenut* <@{inter.author.id}>!"
         try:
-            await inter.author.add_roles(inter.guild.get_role(int(MyChannels.AUTH)))
+            await inter.author.add_roles(inter.guild.get_role(int(MyRoles.AUTH)))
             await inter.author.edit(nick=clan_tag + nickname)
         except errors.Forbidden:
             msg = f"{msg}\n*Avviso* `auth(inter)`"
