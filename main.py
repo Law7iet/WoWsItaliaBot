@@ -1,10 +1,11 @@
-from settings.keep_alive import keep_alive
+from os import system
+
 from disnake import Intents, HTTPException, ApplicationCommandInteraction
 from disnake.ext import commands
 
 from settings import config
+from settings.keep_alive import keep_alive
 from utils.functions import is_debugging
-
 
 if __name__ == "__main__":
 
@@ -44,12 +45,14 @@ if __name__ == "__main__":
 	
 	# Run bot
 	try:
-		# keep_alive()
+		keep_alive()
 		bot.run(config.data["DISCORD_TOKEN"])
 	except HTTPException as e:
 		if e.status == 429:
-			print("Discord servers denied the connection: too many requests")
-			print("Stop the process with \"kill 1\"")
+			print("\n\n\nDiscord servers denied the connection: too many requests")
+			print("Stopping the process and restart it")
+			system("python ./settings/restarter.py")
+			system("kill 1")
 		else:
 			raise e
 	
