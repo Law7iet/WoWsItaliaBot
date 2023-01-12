@@ -203,7 +203,7 @@ class ClanBattle(commands.Cog):
             end = convert_string_to_datetime(mongo_config[str(ConfigKeys.CB_ENDING_DAY)])
             today = datetime.datetime.now()
             totalCount = 0
-            index = 0
+            index = 1
             for d_ord in range(start.toordinal(), end.toordinal()):
                 d = datetime.datetime.fromordinal(d_ord)
                 if d.weekday() == 2 or d.weekday() == 3 or d.weekday() == 5 or d.weekday() == 6:

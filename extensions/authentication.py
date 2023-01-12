@@ -61,7 +61,7 @@ class Authentication(commands.Cog):
             clan_id = self.api_wows.player_clan_data([player_id])[0]["clan_id"]
             clan_tag = self.api_wows.clan_detail([clan_id])[0]["tag"]
             clan_tag = f"[{clan_tag}] "
-        except TypeError:
+        except (IndexError, TypeError):
             clan_tag = ""
         # Add the role and change the player's nickname
         msg = f"Autenticazione effettuata. Benvenut* <@{inter.author.id}>!"
