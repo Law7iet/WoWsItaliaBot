@@ -11,7 +11,7 @@ from utils.functions import get_config_id
 
 class ApiMongoDB:
     def __init__(self):
-        self.project = "WoWsItaliaBot"
+        self.project = "WoWsItaliaDB"
         self.database_name = "WoWsItalia"
         try:
             self.client = MongoClient(serverSelectionTimeoutMS=10)
@@ -559,3 +559,41 @@ class ApiMongoDB:
             return self.__update_element(DBCollections.RANK, {"_id": searched_rank["_id"]}, rank_data)
         else:
             return self.__insert_element(DBCollections.RANK, rank_data)
+
+    def get_ranks(self, clan_id: str, season: int | None, day: int | None):
+        if season and day:
+            ranks = self.__get_ranks({
+                "clan": clan_id,
+                "season": season,
+                "day": day
+            })
+        elif season is None and day is None:
+            ranks = self.__get_ranks({
+                "clan": clan_id,
+            })
+            ranks.sort(key=lambda x: x["season"], reverse=True)
+            latest_season = ranks[0]["season"]
+            ranks = filter(lambda item: item["season"] == latest_season, ranks)
+            ranks.sort(key=lambda x: x["day"], reverse=True)
+            latest_day = ranks[0]["day"]
+            ranks = filter(lambda item: item["day"] == latest_day, ranks)
+        elif season is None:
+            ranks = self.__get_ranks({
+                "clan": clan_id,
+                "day": day
+            })
+            ranks.sort(key=lambda x: x["season"], reverse=True)
+            latest_season = ranks[0]["season"]
+            ranks = filter(lambda item: item["season"] == latest_season, ranks)
+        else:
+            ranks = self.__get_ranks({
+                "clan": clan_id,
+                "season": season
+            })
+            ranks.sort(key=lambda x: x["day"], reverse=True)
+            latest_day = ranks[0]["day"]
+            ranks = filter(lambda item: item["day"] == latest_day, ranks)
+        return ranks
+
+    def update_rank(self, rank_id: int, updated_data: dict) -> dict:
+        return self.__update_element(DBCollections.RANK, {"_id": rank_id}, updated_data)
